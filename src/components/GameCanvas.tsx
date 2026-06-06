@@ -137,8 +137,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         if (containerRef.current) {
           containerRef.current.innerHTML = ''; // Nettoyer pour éviter les doublons de canvas (StrictMode)
           app.canvas.style.position = 'absolute';
-          app.canvas.style.width = `${width}px`;
-          app.canvas.style.height = `${height}px`;
+          app.canvas.style.width = '100%';
+          app.canvas.style.height = '100%';
+          app.canvas.style.top = '0';
+          app.canvas.style.left = '0';
           app.canvas.style.zIndex = '1';
           containerRef.current.appendChild(app.canvas);
         }
@@ -1283,8 +1285,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative rounded-2xl overflow-hidden bg-slate-950 flex justify-center items-center border border-pink-500-20 z-10"
-      style={{ width: '800px', height: '550px', touchAction: 'none', boxShadow: '0 0 50px rgba(255,51,102,0.15)', zIndex: 1 }}
+      className="relative rounded-2xl overflow-hidden bg-slate-950 flex justify-center items-center border border-pink-500-20 z-10 w-full"
+      style={{
+        maxWidth: '800px',
+        aspectRatio: '800 / 550',
+        touchAction: 'none',
+        boxShadow: '0 0 50px rgba(255,51,102,0.15)',
+        zIndex: 1
+      }}
     />
   );
 };

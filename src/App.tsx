@@ -5,7 +5,7 @@
  * et stocke l'état global de la partie.
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MainMenu } from './components/MainMenu';
 import { CharacterSelection } from './components/CharacterSelection';
 import type { Character } from './components/CharacterSelection';
@@ -14,8 +14,9 @@ import { HUD } from './components/HUD';
 import { GameOver } from './components/GameOver';
 import { OnlineLobby } from './components/OnlineLobby';
 import { Socket } from 'socket.io-client';
-import { Volume2, VolumeX } from 'lucide-react';
+import { Volume2, VolumeX, Gamepad } from 'lucide-react';
 import { soundManager } from './game/SoundManager';
+import { inputManager } from './game/Input';
 
 type GameScreen = 'menu' | 'selection' | 'game' | 'gameover' | 'lobby';
 
@@ -48,6 +49,76 @@ function App() {
   const [isPaused, setIsPaused] = useState(false);
   const [winnerName, setWinnerName] = useState<string>('');
   const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // États pour les contrôles tactiles mobiles
+  const [showMobileControls, setShowMobileControls] = useState(false);
+  const [joystickOffset, setJoystickOffset] = useState({ x: 0, y: 0 });
+  const [isJoystickActive, setIsJoystickActive] = useState(false);
+  const joystickStartPos = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    // Détection automatique du support tactile
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    setShowMobileControls(isTouch);
+  }, []);
+
+  const updateJoystickPosition = (dx: number, dy: number) => {
+    const maxRadius = 35; // Rayon max de déplacement du stick
+    const distance = Math.hypot(dx, dy);
+    
+    let targetX = dx;
+    let targetY = dy;
+    
+    if (distance > maxRadius) {
+      const angle = Math.atan2(dy, dx);
+      targetX = Math.cos(angle) * maxRadius;
+      targetY = Math.sin(angle) * maxRadius;
+    }
+    
+    setJoystickOffset({ x: targetX, y: targetY });
+    
+    // Seuil de détection (deadzone) pour activer les directions virtuelles
+    const deadzone = 10;
+    inputManager.virtualInputs.left = targetX < -deadzone;
+    inputManager.virtualInputs.right = targetX > deadzone;
+    inputManager.virtualInputs.up = targetY < -deadzone;
+    inputManager.virtualInputs.down = targetY > deadzone;
+  };
+
+  const handleJoystickDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    setIsJoystickActive(true);
+    const rect = e.currentTarget.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    joystickStartPos.current = { x: centerX, y: centerY };
+    
+    const dx = e.clientX - centerX;
+    const dy = e.clientY - centerY;
+    updateJoystickPosition(dx, dy);
+    
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handleJoystickMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isJoystickActive) return;
+    const dx = e.clientX - joystickStartPos.current.x;
+    const dy = e.clientY - joystickStartPos.current.y;
+    updateJoystickPosition(dx, dy);
+  };
+
+  const handleJoystickUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    setIsJoystickActive(false);
+    setJoystickOffset({ x: 0, y: 0 });
+    
+    inputManager.virtualInputs.left = false;
+    inputManager.virtualInputs.right = false;
+    inputManager.virtualInputs.up = false;
+    inputManager.virtualInputs.down = false;
+    
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch (err) {}
+  };
 
   // Initialise le jeu après sélection du mode
   const handleStartGame = (mode: 'solo' | 'versus' | 'online', diff: 'easy' | 'normal' | 'hard') => {
@@ -148,12 +219,21 @@ function App() {
   return (
     <div className="min-h-screen bg-slate-950 font-sans flex flex-col justify-between text-white relative select-none">
       
-      {/* Barre de contrôle utilitaire en haut à droite (Sons / Aide) */}
+      {/* Barre de contrôle utilitaire en haut à droite (Sons / Aide / Tactile) */}
       <div className="absolute top-6 right-6 flex items-center gap-3 z-50 pointer-events-auto">
         <button
+          onClick={() => setShowMobileControls(!showMobileControls)}
+          className={`p-2-5 rounded-full border transition-all duration-200 shadow-md flex items-center justify-center ${showMobileControls ? 'bg-pink-600 border-pink-500 text-white' : 'bg-slate-900-60 border-white-10 text-zinc-400 hover:text-white hover:bg-slate-800'}`}
+          title="Contrôles tactiles (Mobile)"
+          style={{ width: '38px', height: '38px' }}
+        >
+          <Gamepad size={16} />
+        </button>
+        <button
           onClick={toggleSound}
-          className="p-2-5 rounded-full bg-slate-900-60 border border-white-10 hover:bg-slate-800 text-zinc-400 hover:text-white transition-all duration-200 shadow-md"
+          className="p-2-5 rounded-full bg-slate-900-60 border border-white-10 hover:bg-slate-800 text-zinc-400 hover:text-white transition-all duration-200 shadow-md flex items-center justify-center"
           title={soundEnabled ? 'Couper le son' : 'Activer le son'}
+          style={{ width: '38px', height: '38px' }}
         >
           {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
         </button>
@@ -271,6 +351,82 @@ function App() {
               <span>P2 : Flèches + K (Frapper) + L (Dash) + I (Parer)</span>
             )}
           </div>
+
+          {/* Overlay des contrôles tactiles mobiles */}
+          {showMobileControls && (
+            <div className="fixed inset-0 z-40 pointer-events-none select-none flex justify-between items-end p-6 pb-12 md:p-12 md:pb-16">
+              {/* Stick directionnel à gauche */}
+              <div className="pointer-events-auto flex items-center justify-center w-28 h-28 relative ml-2">
+                <div 
+                  className="w-24 h-24 rounded-full bg-slate-900-90 border border-white-10 flex items-center justify-center relative touch-none shadow-lg backdrop-blur-md"
+                  style={{
+                    boxShadow: '0 0 15px rgba(255,255,255,0.05), inset 0 0 10px rgba(0,0,0,0.8)'
+                  }}
+                  onPointerDown={handleJoystickDown}
+                  onPointerMove={handleJoystickMove}
+                  onPointerUp={handleJoystickUp}
+                  onPointerLeave={handleJoystickUp}
+                >
+                  <div 
+                    className="w-10 h-10 rounded-full bg-gradient-to-r from-pink-500 to-red-500 absolute cursor-pointer"
+                    style={{
+                      transform: `translate(${joystickOffset.x}px, ${joystickOffset.y}px)`,
+                      boxShadow: '0 0 15px var(--pink-500)',
+                      transition: isJoystickActive ? 'none' : 'transform 0.15s ease-out'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Boutons d'action à droite */}
+              <div className="pointer-events-auto flex gap-4 items-end pb-2 mr-2">
+                {/* Parade */}
+                <button
+                  className="w-14 h-14 rounded-full bg-yellow-500-20 border border-yellow-500/50 flex items-center justify-center active:bg-yellow-500/40 text-yellow-500 font-black text-xs uppercase tracking-wider shadow-md select-none touch-none transition-transform active:scale-90"
+                  style={{
+                    boxShadow: '0 0 10px rgba(234, 179, 8, 0.2)',
+                    backdropFilter: 'blur(4px)',
+                    WebkitBackdropFilter: 'blur(4px)'
+                  }}
+                  onPointerDown={() => { inputManager.virtualInputs.block = true; }}
+                  onPointerUp={() => { inputManager.virtualInputs.block = false; }}
+                  onPointerLeave={() => { inputManager.virtualInputs.block = false; }}
+                >
+                  Parer
+                </button>
+
+                {/* Esquive */}
+                <button
+                  className="w-14 h-14 rounded-full bg-cyan-500/20 border border-cyan-500/50 flex items-center justify-center active:bg-cyan-500/40 text-cyan-400 font-black text-xs uppercase tracking-wider shadow-md select-none touch-none transition-transform active:scale-90"
+                  style={{
+                    boxShadow: '0 0 10px rgba(34, 211, 238, 0.2)',
+                    backdropFilter: 'blur(4px)',
+                    WebkitBackdropFilter: 'blur(4px)'
+                  }}
+                  onPointerDown={() => { inputManager.virtualInputs.dash = true; }}
+                  onPointerUp={() => { inputManager.virtualInputs.dash = false; }}
+                  onPointerLeave={() => { inputManager.virtualInputs.dash = false; }}
+                >
+                  Dash
+                </button>
+
+                {/* Frappe */}
+                <button
+                  className="w-16 h-16 rounded-full bg-pink-500-20 border border-pink-500/70 flex items-center justify-center active:bg-pink-500/40 text-pink-400 font-black text-sm uppercase tracking-widest shadow-lg select-none touch-none transition-transform active:scale-90"
+                  style={{
+                    boxShadow: '0 0 15px rgba(236, 72, 153, 0.4)',
+                    backdropFilter: 'blur(4px)',
+                    WebkitBackdropFilter: 'blur(4px)'
+                  }}
+                  onPointerDown={() => { inputManager.virtualInputs.punch = true; }}
+                  onPointerUp={() => { inputManager.virtualInputs.punch = false; }}
+                  onPointerLeave={() => { inputManager.virtualInputs.punch = false; }}
+                >
+                  Punch
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

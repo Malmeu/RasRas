@@ -38,21 +38,31 @@ class InputManager {
     this.pressedKeys.delete(e.code);
   };
 
+  public virtualInputs = {
+    up: false,
+    down: false,
+    left: false,
+    right: false,
+    punch: false,
+    dash: false,
+    block: false,
+  };
+
   /**
    * Retourne l'état des contrôles pour le Joueur 1
-   * Gère à la fois ZQSD (AZERTY) et WASD (QWERTY)
+   * Gère à la fois ZQSD (AZERTY) et WASD (QWERTY) + entrées virtuelles tactiles
    */
   public getPlayer1Controls(): PlayerControls {
     // Déplacement : W ou Z (haut), S (bas), A ou Q (gauche), D (droite)
-    const up = this.pressedKeys.has('KeyW') || this.pressedKeys.has('KeyZ') || this.pressedKeys.has('ArrowUp') && !this.isPlayer2Active();
-    const down = this.pressedKeys.has('KeyS') || this.pressedKeys.has('ArrowDown') && !this.isPlayer2Active();
-    const left = this.pressedKeys.has('KeyA') || this.pressedKeys.has('KeyQ') || this.pressedKeys.has('ArrowLeft') && !this.isPlayer2Active();
-    const right = this.pressedKeys.has('KeyD') || this.pressedKeys.has('ArrowRight') && !this.isPlayer2Active();
+    const up = this.pressedKeys.has('KeyW') || this.pressedKeys.has('KeyZ') || (this.pressedKeys.has('ArrowUp') && !this.isPlayer2Active()) || this.virtualInputs.up;
+    const down = this.pressedKeys.has('KeyS') || (this.pressedKeys.has('ArrowDown') && !this.isPlayer2Active()) || this.virtualInputs.down;
+    const left = this.pressedKeys.has('KeyA') || this.pressedKeys.has('KeyQ') || (this.pressedKeys.has('ArrowLeft') && !this.isPlayer2Active()) || this.virtualInputs.left;
+    const right = this.pressedKeys.has('KeyD') || (this.pressedKeys.has('ArrowRight') && !this.isPlayer2Active()) || this.virtualInputs.right;
 
     // Actions : F ou Espace (frappe), G ou ShiftGauche (dash), C ou E (parade)
-    const punch = this.pressedKeys.has('KeyF') || this.pressedKeys.has('Space');
-    const dash = this.pressedKeys.has('KeyG') || this.pressedKeys.has('ShiftLeft');
-    const block = this.pressedKeys.has('KeyC') || this.pressedKeys.has('KeyE');
+    const punch = this.pressedKeys.has('KeyF') || this.pressedKeys.has('Space') || this.virtualInputs.punch;
+    const dash = this.pressedKeys.has('KeyG') || this.pressedKeys.has('ShiftLeft') || this.virtualInputs.dash;
+    const block = this.pressedKeys.has('KeyC') || this.pressedKeys.has('KeyE') || this.virtualInputs.block;
 
     return { up, down, left, right, punch, dash, block };
   }
