@@ -1,0 +1,301 @@
+/**
+ * App.tsx
+ * Composant racine de l'application RasRas.
+ * Gère le routage interne des écrans (Menu -> Sélection -> Jeu -> Fin de match)
+ * et stocke l'état global de la partie.
+ */
+
+import { useState } from 'react';
+import { MainMenu } from './components/MainMenu';
+import { CharacterSelection } from './components/CharacterSelection';
+import type { Character } from './components/CharacterSelection';
+import { GameCanvas } from './components/GameCanvas';
+import { HUD } from './components/HUD';
+import { GameOver } from './components/GameOver';
+import { OnlineLobby } from './components/OnlineLobby';
+import { Socket } from 'socket.io-client';
+import { Volume2, VolumeX } from 'lucide-react';
+import { soundManager } from './game/SoundManager';
+
+type GameScreen = 'menu' | 'selection' | 'game' | 'gameover' | 'lobby';
+
+function App() {
+  const [screen, setScreen] = useState<GameScreen>('menu');
+  const [gameMode, setGameMode] = useState<'solo' | 'versus' | 'online'>('solo');
+  const [difficulty, setDifficulty] = useState<'easy' | 'normal' | 'hard'>('normal');
+  
+  // États multijoueur en ligne
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [onlineRole, setOnlineRole] = useState<'host' | 'client' | null>(null);
+  const [roomCode, setRoomCode] = useState<string>('');
+  
+  // Personnages sélectionnés
+  const [p1Char, setP1Char] = useState<Character | null>(null);
+  const [p2Char, setP2Char] = useState<Character | null>(null);
+
+  // Statistiques en direct du combat (remontées par le Canvas PixiJS)
+  const [liveData, setLiveData] = useState({
+    p1Hp: 100,
+    p2Hp: 100,
+    p1Rage: 0,
+    p2Rage: 0,
+    p1Combo: 0,
+    p2Combo: 0,
+    gameTime: 99,
+    isKO: false,
+  });
+
+  const [isPaused, setIsPaused] = useState(false);
+  const [winnerName, setWinnerName] = useState<string>('');
+  const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // Initialise le jeu après sélection du mode
+  const handleStartGame = (mode: 'solo' | 'versus' | 'online', diff: 'easy' | 'normal' | 'hard') => {
+    setGameMode(mode);
+    setDifficulty(diff);
+    if (mode === 'online') {
+      setScreen('lobby');
+    } else {
+      setScreen('selection');
+    }
+  };
+
+  // Lance le combat après sélection des personnages
+  const handleCharactersSelected = (p1: Character, p2: Character) => {
+    setP1Char(p1);
+    setP2Char(p2);
+    
+    // Initialiser les stats de départ
+    setLiveData({
+      p1Hp: p1.maxHp,
+      p2Hp: p2.maxHp,
+      p1Rage: 0,
+      p2Rage: 0,
+      p1Combo: 0,
+      p2Combo: 0,
+      gameTime: 99,
+      isKO: false,
+    });
+    
+    setIsPaused(false);
+    setScreen('game');
+  };
+
+  // Lance le combat en ligne
+  const handleOnlineGameStart = (gameSocket: Socket, role: 'host' | 'client', p1: Character, p2: Character, room: string) => {
+    setSocket(gameSocket);
+    setOnlineRole(role);
+    setRoomCode(room);
+    setP1Char(p1);
+    setP2Char(p2);
+    
+    setLiveData({
+      p1Hp: p1.maxHp,
+      p2Hp: p2.maxHp,
+      p1Rage: 0,
+      p2Rage: 0,
+      p1Combo: 0,
+      p2Combo: 0,
+      gameTime: 99,
+      isKO: false,
+    });
+    
+    setIsPaused(false);
+    setScreen('game');
+  };
+
+  // Fin de partie
+  const handleGameOver = (winner: string) => {
+    setWinnerName(winner);
+    setScreen('gameover');
+  };
+
+  // Rejouer le match
+  const handleRestart = () => {
+    if (gameMode === 'online') {
+      setScreen('lobby');
+      setP1Char(null);
+      setP2Char(null);
+      setOnlineRole(null);
+    } else if (p1Char && p2Char) {
+      handleCharactersSelected(p1Char, p2Char);
+    }
+  };
+
+  // Retour au menu principal
+  const handleHome = () => {
+    if (socket) {
+      socket.disconnect();
+      setSocket(null);
+    }
+    setP1Char(null);
+    setP2Char(null);
+    setOnlineRole(null);
+    setScreen('menu');
+  };
+
+  // Activer/Désactiver le son
+  const toggleSound = () => {
+    setSoundEnabled(!soundEnabled);
+    soundManager.init();
+    if (soundEnabled) {
+      soundManager.stopBGM();
+    } else {
+      soundManager.playBGM();
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 font-sans flex flex-col justify-between text-white relative select-none">
+      
+      {/* Barre de contrôle utilitaire en haut à droite (Sons / Aide) */}
+      <div className="absolute top-6 right-6 flex items-center gap-3 z-50 pointer-events-auto">
+        <button
+          onClick={toggleSound}
+          className="p-2-5 rounded-full bg-slate-900-60 border border-white-10 hover:bg-slate-800 text-zinc-400 hover:text-white transition-all duration-200 shadow-md"
+          title={soundEnabled ? 'Couper le son' : 'Activer le son'}
+        >
+          {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+        </button>
+      </div>
+
+      {/* RENDER DES DIFFÉRENTS ÉCRANS */}
+      {screen === 'menu' && (
+        <MainMenu onStartGame={handleStartGame} />
+      )}
+
+      {screen === 'selection' && (
+        <CharacterSelection
+          gameMode={gameMode as 'solo' | 'versus'}
+          onBack={handleHome}
+          onCharactersSelected={handleCharactersSelected}
+        />
+      )}
+
+      {screen === 'game' && p1Char && p2Char && (
+        <div className="flex-1 flex flex-col items-center justify-center min-h-screen px-4 py-8 relative overflow-hidden bg-slate-950">
+          {/* Grille de fond en style CSS */}
+          <div className="absolute inset-0 bg-slate-950 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(120,50,200,0.15) 0%, transparent 80%)' }} />
+
+          {/* En-tête informatif */}
+          <div className="text-center mb-4 relative z-10 flex flex-col items-center">
+            <h2 className="text-xl font-black uppercase tracking-widest text-pink-400" style={{ filter: 'drop-shadow(0 0 10px rgba(219,39,119,0.3))' }}>
+              {gameMode === 'solo' ? 'Combat Solo' : gameMode === 'versus' ? 'Confrontation Locale' : 'Arène En Ligne'}
+            </h2>
+            {gameMode === 'solo' && (
+              <span className="text-10px font-bold text-zinc-500 uppercase tracking-widest bg-white-5 border border-white-5 px-2 py-1 rounded mt-1">
+                IA : {difficulty === 'easy' ? 'Facile' : difficulty === 'normal' ? 'Normal' : 'Difficile'}
+              </span>
+            )}
+            {gameMode === 'online' && (
+              <span className="text-10px font-bold text-pink-400 uppercase tracking-widest bg-white-5 border border-pink-500-20 px-2 py-1 rounded mt-1">
+                Rôle : {onlineRole === 'host' ? 'Créateur (Hôte)' : 'Invité (Client)'}
+              </span>
+            )}
+          </div>
+
+          {/* Arène de jeu principale */}
+          <div className="relative rounded-2xl overflow-hidden bg-slate-950 border border-white-10 shadow-box-over">
+            {/* Canvas PixiJS de combat */}
+            <GameCanvas
+              gameMode={gameMode}
+              difficulty={difficulty}
+              player1Character={p1Char}
+              player2Character={p2Char}
+              onGameDataUpdate={setLiveData}
+              onGameOver={handleGameOver}
+              isPaused={isPaused}
+              socket={socket}
+              onlineRole={onlineRole}
+              roomCode={roomCode}
+            />
+
+            {/* Overlay d'effet KO "KIIIIW" de Street Fighter */}
+            {liveData.isKO && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none animate-ko-flash-bg" style={{ zIndex: 900 }}>
+                <div className="animate-ko-bounce-text select-none">
+                  <h1 className="ko-text-kiw">KIIIIW</h1>
+                </div>
+              </div>
+            )}
+
+            {/* Overlay d'interface utilisateur (HUD) */}
+            <div className="hud-container">
+              <HUD
+                p1Name={p1Char.name}
+                p2Name={p2Char.name}
+                p1ColorHex={p1Char.colorHex}
+                p2ColorHex={p2Char.colorHex}
+                p1MaxHp={p1Char.maxHp}
+                p2MaxHp={p2Char.maxHp}
+                p1Hp={liveData.p1Hp}
+                p2Hp={liveData.p2Hp}
+                p1Rage={liveData.p1Rage}
+                p2Rage={liveData.p2Rage}
+                p1Combo={liveData.p1Combo}
+                p2Combo={liveData.p2Combo}
+                gameTime={liveData.gameTime}
+                isPaused={isPaused}
+                onTogglePause={() => setIsPaused(!isPaused)}
+              />
+            </div>
+
+            {/* Overlay d'écran de Pause */}
+            {isPaused && (
+              <div className="absolute inset-0 bg-slate-950-80 backdrop-blur-sm flex flex-col items-center justify-center z-40 animate-fade-in pointer-events-auto">
+                <h3 className="text-5xl font-black uppercase tracking-widest text-pink-500 mb-6" style={{ filter: 'drop-shadow(0 0 15px rgba(219,39,119,0.5))' }}>
+                  PAUSE
+                </h3>
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setIsPaused(false)}
+                    className="py-3 px-6 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-sm uppercase tracking-wider transition-all duration-200"
+                  >
+                    Reprendre
+                  </button>
+                  <button
+                    onClick={handleHome}
+                    className="py-3 px-6 rounded-xl bg-white-5 border border-white-10 hover:bg-white-10 text-zinc-300 font-bold text-sm uppercase tracking-wider transition-all duration-200"
+                  >
+                    Menu Principal
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Aide-mémoire des touches en bas du jeu */}
+          <div className="mt-4 text-10px text-zinc-500 tracking-wider uppercase font-semibold flex gap-6">
+            <span>P1 : ZQSD / WASD + Espace (Frapper) + Shift (Dash) + C (Parer)</span>
+            {gameMode === 'versus' && (
+              <span>P2 : Flèches + K (Frapper) + L (Dash) + I (Parer)</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {screen === 'lobby' && (
+        <OnlineLobby
+          onBack={handleHome}
+          onGameStart={handleOnlineGameStart}
+        />
+      )}
+
+      {screen === 'gameover' && p1Char && p2Char && (
+        <div className="relative min-h-screen">
+          <GameOver
+            winnerName={winnerName}
+            p1Name={p1Char.name}
+            p2Name={p2Char.name}
+            p1ColorHex={p1Char.colorHex}
+            p2ColorHex={p2Char.colorHex}
+            onRestart={handleRestart}
+            onHome={handleHome}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default App;

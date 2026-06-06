@@ -1,0 +1,250 @@
+/**
+ * ParticleSystem.ts
+ * Gère l'émission et la mise à jour des effets de particules PixiJS.
+ * Utilise des objets Graphics dessinés à la volée pour des performances optimales et sans textures externes.
+ */
+
+import { Container, Graphics } from 'pixi.js';
+
+interface Particle {
+  graphic: Graphics;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  alpha: number;
+  scale: number;
+  color: number;
+  life: number;
+  maxLife: number;
+  type: 'dust' | 'spark' | 'star' | 'block';
+  rotationSpeed?: number;
+}
+
+export class ParticleSystem {
+  private container: Container;
+  private particles: Particle[] = [];
+
+  constructor(container: Container) {
+    this.container = container;
+  }
+
+  /**
+   * Met à jour toutes les particules actives
+   * @param dt Delta time (multiplicateur de vitesse)
+   */
+  public update(dt: number) {
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const p = this.particles[i];
+      p.life -= dt;
+
+      if (p.life <= 0) {
+        // Supprimer la particule
+        this.container.removeChild(p.graphic);
+        p.graphic.destroy();
+        this.particles.splice(i, 1);
+        continue;
+      }
+
+      // Appliquer la vitesse
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+
+      // Friction selon le type
+      if (p.type === 'dust') {
+        p.vx *= Math.pow(0.92, dt);
+        p.vy *= Math.pow(0.92, dt);
+      } else if (p.type === 'spark' || p.type === 'block') {
+        p.vx *= Math.pow(0.96, dt);
+        p.vy *= Math.pow(0.96, dt);
+      }
+
+      // Gravité sur certaines particules
+      if (p.type === 'star') {
+        // Mouvement circulaire
+        const angle = (p.life / p.maxLife) * Math.PI * 4;
+        p.x += Math.cos(angle) * 0.8 * dt;
+        p.y += Math.sin(angle) * 0.5 * dt;
+      }
+
+      // Mettre à jour les propriétés visuelles de l'objet PixiJS
+      p.graphic.x = p.x;
+      p.graphic.y = p.y;
+      p.graphic.alpha = p.life / p.maxLife;
+
+      const progress = p.life / p.maxLife;
+      if (p.type === 'dust') {
+        p.graphic.scale.set(p.scale * progress);
+      } else {
+        p.graphic.scale.set(p.scale);
+      }
+
+      if (p.rotationSpeed) {
+        p.graphic.rotation += p.rotationSpeed * dt;
+      }
+    }
+  }
+
+  /**
+   * Émet de la poussière derrière un combattant qui fait un dash
+   */
+  public emitDashDust(x: number, y: number, angle: number) {
+    const count = 6;
+    for (let i = 0; i < count; i++) {
+      const graphic = new Graphics();
+      // Dessiner un petit cercle de poussière blanc/gris
+      graphic.circle(0, 0, 6 + Math.random() * 4);
+      graphic.fill({ color: 0xeeeeee, alpha: 0.6 });
+
+      const oppositeAngle = angle + Math.PI + (Math.random() - 0.5) * 0.5;
+      const speed = 1.5 + Math.random() * 2.5;
+
+      const p: Particle = {
+        graphic,
+        x,
+        y,
+        vx: Math.cos(oppositeAngle) * speed,
+        vy: Math.sin(oppositeAngle) * speed,
+        alpha: 0.6,
+        scale: 1,
+        color: 0xeeeeee,
+        life: 15 + Math.random() * 10,
+        maxLife: 25,
+        type: 'dust',
+      };
+
+      this.container.addChild(graphic);
+      this.particles.push(p);
+    }
+  }
+
+  /**
+   * Émet des étincelles lors d'un coup réussi
+   */
+  public emitHitSparks(x: number, y: number, impactAngle: number, isHeavy: boolean = false) {
+    const count = isHeavy ? 25 : 12;
+    const colors = isHeavy ? [0xff3300, 0xffaa00, 0xffff00] : [0xffaa00, 0xffff00];
+
+    for (let i = 0; i < count; i++) {
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const graphic = new Graphics();
+      
+      // Tracer une ligne d'étincelle
+      const length = 8 + Math.random() * 12;
+      graphic.moveTo(-length / 2, 0);
+      graphic.lineTo(length / 2, 0);
+      graphic.stroke({ width: 2.5 + Math.random() * 2, color: color });
+
+      const scatterAngle = impactAngle + (Math.random() - 0.5) * 1.8;
+      const speed = (isHeavy ? 4 : 2.5) + Math.random() * (isHeavy ? 6 : 4);
+
+      // Rotation de l'étincelle dans le sens du mouvement
+      graphic.rotation = scatterAngle;
+
+      const p: Particle = {
+        graphic,
+        x,
+        y,
+        vx: Math.cos(scatterAngle) * speed,
+        vy: Math.sin(scatterAngle) * speed,
+        alpha: 1,
+        scale: 1,
+        color,
+        life: 10 + Math.random() * 15,
+        maxLife: 25,
+        type: 'spark',
+      };
+
+      this.container.addChild(graphic);
+      this.particles.push(p);
+    }
+  }
+
+  /**
+   * Émet des particules bleues en cercle lors d'un blocage réussi
+   */
+  public emitBlockSparks(x: number, y: number) {
+    const count = 10;
+    for (let i = 0; i < count; i++) {
+      const color = 0x00ccff;
+      const graphic = new Graphics();
+      
+      // Étoiles ou carrés bleus
+      graphic.rect(-3, -3, 6, 6);
+      graphic.fill({ color });
+
+      const angle = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.2;
+      const speed = 2 + Math.random() * 3;
+
+      const p: Particle = {
+        graphic,
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        alpha: 1,
+        scale: 0.8 + Math.random() * 0.4,
+        color,
+        life: 12 + Math.random() * 8,
+        maxLife: 20,
+        type: 'block',
+        rotationSpeed: 0.1 + Math.random() * 0.2,
+      };
+
+      this.container.addChild(graphic);
+      this.particles.push(p);
+    }
+  }
+
+  /**
+   * Émet des petites étoiles jaunes qui gravitent lors d'un étourdissement (stun)
+   */
+  public emitStunStars(x: number, y: number) {
+    const color = 0xffd700; // Or
+    const graphic = new Graphics();
+    
+    // Dessiner une forme d'étoile simple à 4 branches
+    graphic.moveTo(0, -6);
+    graphic.lineTo(2, -2);
+    graphic.lineTo(6, 0);
+    graphic.lineTo(2, 2);
+    graphic.lineTo(0, 6);
+    graphic.lineTo(-2, 2);
+    graphic.lineTo(-6, 0);
+    graphic.lineTo(-2, -2);
+    graphic.closePath();
+    graphic.fill({ color });
+
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 0.5;
+
+    const p: Particle = {
+      graphic,
+      x: x + (Math.random() - 0.5) * 20,
+      y: y - 25 + (Math.random() - 0.5) * 10,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      alpha: 1,
+      scale: 0.7 + Math.random() * 0.5,
+      color,
+      life: 30 + Math.random() * 15,
+      maxLife: 45,
+      type: 'star',
+      rotationSpeed: 0.05 + Math.random() * 0.1,
+    };
+
+    this.container.addChild(graphic);
+    this.particles.push(p);
+  }
+
+  /**
+   * Nettoie toutes les particules à la fin
+   */
+  public destroy() {
+    this.particles.forEach((p) => {
+      this.container.removeChild(p.graphic);
+      p.graphic.destroy();
+    });
+    this.particles = [];
+  }
+}
