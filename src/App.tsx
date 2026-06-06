@@ -363,8 +363,8 @@ function App() {
             {/* Overlay des contrôles tactiles mobiles transparents aux extrémités de l'arène */}
             {showMobileControls && (
               <div 
-                className="absolute inset-0 z-30 pointer-events-none select-none flex justify-between items-end p-4 pb-6"
-                style={{ touchAction: 'none' }}
+                className="absolute inset-0 pointer-events-none select-none flex justify-between items-end p-4 pb-6"
+                style={{ zIndex: 50, touchAction: 'none' }}
               >
                 {/* Stick directionnel à gauche */}
                 <div 
