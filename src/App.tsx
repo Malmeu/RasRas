@@ -58,8 +58,8 @@ function App() {
   const [isPortrait, setIsPortrait] = useState(false);
 
   useEffect(() => {
-    // Détection automatique du support tactile
-    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    // Détection automatique du support tactile et des écrans typés mobiles/tablettes
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth < 1024;
     setShowMobileControls(isTouch);
 
     // Détection et écoute de l'orientation de l'écran
@@ -362,52 +362,31 @@ function App() {
 
             {/* Overlay des contrôles tactiles mobiles transparents aux extrémités de l'arène */}
             {showMobileControls && (
-              <div 
-                className="absolute inset-0 pointer-events-none select-none flex justify-between items-end p-4 pb-6"
-                style={{ zIndex: 50, touchAction: 'none' }}
-              >
+              <div className="mobile-controls-overlay">
                 {/* Stick directionnel à gauche */}
-                <div 
-                  className="pointer-events-auto flex items-center justify-center w-24 h-24 relative ml-2 opacity-50 active:opacity-90 transition-opacity duration-150"
-                  style={{ touchAction: 'none' }}
-                >
+                <div className={`mobile-joystick-container ${isJoystickActive ? 'active' : ''}`}>
                   <div 
-                    className="w-20 h-20 rounded-full bg-slate-900/30 border border-white/20 flex items-center justify-center relative touch-none shadow-md"
-                    style={{
-                      boxShadow: '0 0 10px rgba(255,255,255,0.03), inset 0 0 8px rgba(0,0,0,0.6)',
-                      touchAction: 'none'
-                    }}
+                    className="mobile-joystick-base"
                     onPointerDown={handleJoystickDown}
                     onPointerMove={handleJoystickMove}
                     onPointerUp={handleJoystickUp}
                     onPointerLeave={handleJoystickUp}
                   >
                     <div 
-                      className="w-8 h-8 rounded-full bg-gradient-to-r from-pink-500 to-red-500 absolute cursor-pointer"
+                      className="mobile-joystick-handle"
                       style={{
                         transform: `translate(${joystickOffset.x}px, ${joystickOffset.y}px)`,
-                        boxShadow: '0 0 10px #ec4899',
                         transition: isJoystickActive ? 'none' : 'transform 0.15s ease-out',
-                        touchAction: 'none'
                       }}
                     />
                   </div>
                 </div>
 
                 {/* Boutons d'action à droite */}
-                <div 
-                  className="pointer-events-auto flex gap-3 items-end pb-1 mr-2 opacity-60 active:opacity-100 transition-opacity duration-150"
-                  style={{ touchAction: 'none' }}
-                >
+                <div className="mobile-buttons-container">
                   {/* Parade */}
                   <button
-                    className="w-12 h-12 rounded-full bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center active:bg-yellow-500/40 text-yellow-400/80 font-black text-[10px] uppercase tracking-wider shadow-sm select-none touch-none transition-transform active:scale-90"
-                    style={{
-                      boxShadow: '0 0 8px rgba(234, 179, 8, 0.1)',
-                      backdropFilter: 'blur(2px)',
-                      WebkitBackdropFilter: 'blur(2px)',
-                      touchAction: 'none'
-                    }}
+                    className="mobile-action-btn mobile-btn-block"
                     onPointerDown={() => { inputManager.virtualInputs.block = true; }}
                     onPointerUp={() => { inputManager.virtualInputs.block = false; }}
                     onPointerLeave={() => { inputManager.virtualInputs.block = false; }}
@@ -417,13 +396,7 @@ function App() {
 
                   {/* Esquive */}
                   <button
-                    className="w-12 h-12 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center active:bg-cyan-500/40 text-cyan-400/80 font-black text-[10px] uppercase tracking-wider shadow-sm select-none touch-none transition-transform active:scale-90"
-                    style={{
-                      boxShadow: '0 0 8px rgba(34, 211, 238, 0.1)',
-                      backdropFilter: 'blur(2px)',
-                      WebkitBackdropFilter: 'blur(2px)',
-                      touchAction: 'none'
-                    }}
+                    className="mobile-action-btn mobile-btn-dash"
                     onPointerDown={() => { inputManager.virtualInputs.dash = true; }}
                     onPointerUp={() => { inputManager.virtualInputs.dash = false; }}
                     onPointerLeave={() => { inputManager.virtualInputs.dash = false; }}
@@ -433,13 +406,7 @@ function App() {
 
                   {/* Frappe */}
                   <button
-                    className="w-14 h-14 rounded-full bg-pink-500/10 border border-pink-500/50 flex items-center justify-center active:bg-pink-500/40 text-pink-400/90 font-black text-xs uppercase tracking-widest shadow-md select-none touch-none transition-transform active:scale-90"
-                    style={{
-                      boxShadow: '0 0 12px rgba(236, 72, 153, 0.2)',
-                      backdropFilter: 'blur(2px)',
-                      WebkitBackdropFilter: 'blur(2px)',
-                      touchAction: 'none'
-                    }}
+                    className="mobile-action-btn mobile-btn-punch"
                     onPointerDown={() => { inputManager.virtualInputs.punch = true; }}
                     onPointerUp={() => { inputManager.virtualInputs.punch = false; }}
                     onPointerLeave={() => { inputManager.virtualInputs.punch = false; }}
