@@ -55,11 +55,25 @@ function App() {
   const [joystickOffset, setJoystickOffset] = useState({ x: 0, y: 0 });
   const [isJoystickActive, setIsJoystickActive] = useState(false);
   const joystickStartPos = useRef({ x: 0, y: 0 });
+  const [isPortrait, setIsPortrait] = useState(false);
 
   useEffect(() => {
     // Détection automatique du support tactile
     const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     setShowMobileControls(isTouch);
+
+    // Détection et écoute de l'orientation de l'écran
+    const handleOrientation = () => {
+      setIsPortrait(window.innerHeight > window.innerWidth);
+    };
+    window.addEventListener('resize', handleOrientation);
+    window.addEventListener('orientationchange', handleOrientation);
+    handleOrientation();
+
+    return () => {
+      window.removeEventListener('resize', handleOrientation);
+      window.removeEventListener('orientationchange', handleOrientation);
+    };
   }, []);
 
   const updateJoystickPosition = (dx: number, dy: number) => {
@@ -448,6 +462,45 @@ function App() {
             onRestart={handleRestart}
             onHome={handleHome}
           />
+        </div>
+      )}
+      {/* Overlay demandant de tourner l'appareil à l'horizontale en mode portrait sur mobile */}
+      {showMobileControls && isPortrait && (
+        <div 
+          className="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center text-center p-6"
+          style={{ zIndex: 999999 }}
+        >
+          <style>{`
+            @keyframes rotate-device {
+              0%, 100% { transform: rotate(0deg); }
+              40%, 60% { transform: rotate(90deg); }
+            }
+          `}</style>
+          <div className="mb-6 flex items-center justify-center">
+            <svg
+              className="w-20 h-20 text-pink-500"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ filter: 'drop-shadow(0 0 10px rgba(236, 72, 153, 0.4))' }}
+            >
+              <g style={{ transformOrigin: 'center', animation: 'rotate-device 2.2s ease-in-out infinite' }}>
+                <rect x="7" y="2" width="10" height="20" rx="2" stroke="currentColor" fill="none" />
+                <path d="M12 18h.01" strokeWidth="2" />
+              </g>
+              <path d="M3 12a9 9 0 0 1 9-9" stroke="currentColor" strokeDasharray="3 3" opacity="0.5" />
+              <path d="M21 12a9 9 0 0 1-9 9" stroke="currentColor" strokeDasharray="3 3" opacity="0.5" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-black uppercase tracking-widest text-pink-400 mb-2" style={{ filter: 'drop-shadow(0 0 8px rgba(236,72,153,0.3))' }}>
+            Rotation Requise
+          </h2>
+          <p className="text-xs text-zinc-400 max-w-xs font-semibold uppercase tracking-wider">
+            Veuillez tourner votre appareil à l'horizontale (mode paysage) pour combattre !
+          </p>
         </div>
       )}
     </div>

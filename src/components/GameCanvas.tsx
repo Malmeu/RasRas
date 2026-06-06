@@ -181,6 +181,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
       // 3. Charger et dessiner l'image de fond du ring carré
       const bgTexture = await Assets.load('/assets/images/ring_background.png');
+      if (!active) {
+        try {
+          if (app.renderer) {
+            app.destroy(true, { children: true });
+          }
+        } catch (e) {}
+        return;
+      }
       const bgSprite = new Sprite(bgTexture);
       bgSprite.width = width;
       bgSprite.height = height;
@@ -1230,6 +1238,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     return () => {
       active = false;
       soundManager.stopBGM();
+      
+      // Décharger la texture pour éviter les conflits de cache WebGL
+      try {
+        Assets.unload('/assets/images/ring_background.png');
+      } catch (e) {}
       
       // Nettoyer manuellement les graphiques des armes au sol
       droppedItems.forEach(item => {
