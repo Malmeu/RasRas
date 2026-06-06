@@ -289,7 +289,10 @@ function App() {
           </div>
 
           {/* Arène de jeu principale */}
-          <div className="relative rounded-2xl overflow-hidden bg-slate-950 border border-white-10 shadow-box-over">
+          <div 
+            className="relative rounded-2xl overflow-hidden bg-slate-950 border border-white-10 shadow-box-over w-full"
+            style={{ maxWidth: '800px', aspectRatio: '800 / 550' }}
+          >
             {/* Canvas PixiJS de combat */}
             <GameCanvas
               gameMode={gameMode}

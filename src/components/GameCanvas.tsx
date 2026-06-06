@@ -1281,8 +1281,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   if (errorMsg) {
     return (
       <div 
-        className="relative rounded-2xl border bg-slate-950 flex flex-col justify-center items-center text-center p-6 gap-4 border-red-500-20"
-        style={{ width: '800px', height: '550px' }}
+        className="relative rounded-2xl border bg-slate-950 flex flex-col justify-center items-center text-center p-6 gap-4 border-red-500-20 w-full h-full"
       >
         <h3 className="text-xl font-black uppercase text-red-400">Erreur d'initialisation</h3>
         <p className="text-xs font-mono bg-black-40 p-4 rounded-xl border border-white-5 max-w-xl overflow-auto text-zinc-400">
@@ -1298,10 +1297,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative rounded-2xl overflow-hidden bg-slate-950 flex justify-center items-center border border-pink-500-20 z-10 w-full"
+      className="relative rounded-2xl overflow-hidden bg-slate-950 flex justify-center items-center border border-pink-500-20 z-10 w-full h-full"
       style={{
-        maxWidth: '800px',
-        aspectRatio: '800 / 550',
         touchAction: 'none',
         boxShadow: '0 0 50px rgba(255,51,102,0.15)',
         zIndex: 1
