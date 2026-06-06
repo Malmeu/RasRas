@@ -359,6 +359,96 @@ function App() {
                 </div>
               </div>
             )}
+
+            {/* Overlay des contrôles tactiles mobiles transparents aux extrémités de l'arène */}
+            {showMobileControls && (
+              <div 
+                className="absolute inset-0 z-30 pointer-events-none select-none flex justify-between items-end p-4 pb-6"
+                style={{ touchAction: 'none' }}
+              >
+                {/* Stick directionnel à gauche */}
+                <div 
+                  className="pointer-events-auto flex items-center justify-center w-24 h-24 relative ml-2 opacity-50 active:opacity-90 transition-opacity duration-150"
+                  style={{ touchAction: 'none' }}
+                >
+                  <div 
+                    className="w-20 h-20 rounded-full bg-slate-900/30 border border-white/20 flex items-center justify-center relative touch-none shadow-md"
+                    style={{
+                      boxShadow: '0 0 10px rgba(255,255,255,0.03), inset 0 0 8px rgba(0,0,0,0.6)',
+                      touchAction: 'none'
+                    }}
+                    onPointerDown={handleJoystickDown}
+                    onPointerMove={handleJoystickMove}
+                    onPointerUp={handleJoystickUp}
+                    onPointerLeave={handleJoystickUp}
+                  >
+                    <div 
+                      className="w-8 h-8 rounded-full bg-gradient-to-r from-pink-500 to-red-500 absolute cursor-pointer"
+                      style={{
+                        transform: `translate(${joystickOffset.x}px, ${joystickOffset.y}px)`,
+                        boxShadow: '0 0 10px #ec4899',
+                        transition: isJoystickActive ? 'none' : 'transform 0.15s ease-out',
+                        touchAction: 'none'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Boutons d'action à droite */}
+                <div 
+                  className="pointer-events-auto flex gap-3 items-end pb-1 mr-2 opacity-60 active:opacity-100 transition-opacity duration-150"
+                  style={{ touchAction: 'none' }}
+                >
+                  {/* Parade */}
+                  <button
+                    className="w-12 h-12 rounded-full bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center active:bg-yellow-500/40 text-yellow-400/80 font-black text-[10px] uppercase tracking-wider shadow-sm select-none touch-none transition-transform active:scale-90"
+                    style={{
+                      boxShadow: '0 0 8px rgba(234, 179, 8, 0.1)',
+                      backdropFilter: 'blur(2px)',
+                      WebkitBackdropFilter: 'blur(2px)',
+                      touchAction: 'none'
+                    }}
+                    onPointerDown={() => { inputManager.virtualInputs.block = true; }}
+                    onPointerUp={() => { inputManager.virtualInputs.block = false; }}
+                    onPointerLeave={() => { inputManager.virtualInputs.block = false; }}
+                  >
+                    Parer
+                  </button>
+
+                  {/* Esquive */}
+                  <button
+                    className="w-12 h-12 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center active:bg-cyan-500/40 text-cyan-400/80 font-black text-[10px] uppercase tracking-wider shadow-sm select-none touch-none transition-transform active:scale-90"
+                    style={{
+                      boxShadow: '0 0 8px rgba(34, 211, 238, 0.1)',
+                      backdropFilter: 'blur(2px)',
+                      WebkitBackdropFilter: 'blur(2px)',
+                      touchAction: 'none'
+                    }}
+                    onPointerDown={() => { inputManager.virtualInputs.dash = true; }}
+                    onPointerUp={() => { inputManager.virtualInputs.dash = false; }}
+                    onPointerLeave={() => { inputManager.virtualInputs.dash = false; }}
+                  >
+                    Dash
+                  </button>
+
+                  {/* Frappe */}
+                  <button
+                    className="w-14 h-14 rounded-full bg-pink-500/10 border border-pink-500/50 flex items-center justify-center active:bg-pink-500/40 text-pink-400/90 font-black text-xs uppercase tracking-widest shadow-md select-none touch-none transition-transform active:scale-90"
+                    style={{
+                      boxShadow: '0 0 12px rgba(236, 72, 153, 0.2)',
+                      backdropFilter: 'blur(2px)',
+                      WebkitBackdropFilter: 'blur(2px)',
+                      touchAction: 'none'
+                    }}
+                    onPointerDown={() => { inputManager.virtualInputs.punch = true; }}
+                    onPointerUp={() => { inputManager.virtualInputs.punch = false; }}
+                    onPointerLeave={() => { inputManager.virtualInputs.punch = false; }}
+                  >
+                    Punch
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Aide-mémoire des touches en bas du jeu */}
@@ -369,81 +459,7 @@ function App() {
             )}
           </div>
 
-          {/* Overlay des contrôles tactiles mobiles */}
-          {showMobileControls && (
-            <div className="fixed inset-0 z-40 pointer-events-none select-none flex justify-between items-end p-6 pb-12 md:p-12 md:pb-16">
-              {/* Stick directionnel à gauche */}
-              <div className="pointer-events-auto flex items-center justify-center w-28 h-28 relative ml-2">
-                <div 
-                  className="w-24 h-24 rounded-full bg-slate-900-90 border border-white-10 flex items-center justify-center relative touch-none shadow-lg backdrop-blur-md"
-                  style={{
-                    boxShadow: '0 0 15px rgba(255,255,255,0.05), inset 0 0 10px rgba(0,0,0,0.8)'
-                  }}
-                  onPointerDown={handleJoystickDown}
-                  onPointerMove={handleJoystickMove}
-                  onPointerUp={handleJoystickUp}
-                  onPointerLeave={handleJoystickUp}
-                >
-                  <div 
-                    className="w-10 h-10 rounded-full bg-gradient-to-r from-pink-500 to-red-500 absolute cursor-pointer"
-                    style={{
-                      transform: `translate(${joystickOffset.x}px, ${joystickOffset.y}px)`,
-                      boxShadow: '0 0 15px var(--pink-500)',
-                      transition: isJoystickActive ? 'none' : 'transform 0.15s ease-out'
-                    }}
-                  />
-                </div>
-              </div>
 
-              {/* Boutons d'action à droite */}
-              <div className="pointer-events-auto flex gap-4 items-end pb-2 mr-2">
-                {/* Parade */}
-                <button
-                  className="w-14 h-14 rounded-full bg-yellow-500-20 border border-yellow-500/50 flex items-center justify-center active:bg-yellow-500/40 text-yellow-500 font-black text-xs uppercase tracking-wider shadow-md select-none touch-none transition-transform active:scale-90"
-                  style={{
-                    boxShadow: '0 0 10px rgba(234, 179, 8, 0.2)',
-                    backdropFilter: 'blur(4px)',
-                    WebkitBackdropFilter: 'blur(4px)'
-                  }}
-                  onPointerDown={() => { inputManager.virtualInputs.block = true; }}
-                  onPointerUp={() => { inputManager.virtualInputs.block = false; }}
-                  onPointerLeave={() => { inputManager.virtualInputs.block = false; }}
-                >
-                  Parer
-                </button>
-
-                {/* Esquive */}
-                <button
-                  className="w-14 h-14 rounded-full bg-cyan-500/20 border border-cyan-500/50 flex items-center justify-center active:bg-cyan-500/40 text-cyan-400 font-black text-xs uppercase tracking-wider shadow-md select-none touch-none transition-transform active:scale-90"
-                  style={{
-                    boxShadow: '0 0 10px rgba(34, 211, 238, 0.2)',
-                    backdropFilter: 'blur(4px)',
-                    WebkitBackdropFilter: 'blur(4px)'
-                  }}
-                  onPointerDown={() => { inputManager.virtualInputs.dash = true; }}
-                  onPointerUp={() => { inputManager.virtualInputs.dash = false; }}
-                  onPointerLeave={() => { inputManager.virtualInputs.dash = false; }}
-                >
-                  Dash
-                </button>
-
-                {/* Frappe */}
-                <button
-                  className="w-16 h-16 rounded-full bg-pink-500-20 border border-pink-500/70 flex items-center justify-center active:bg-pink-500/40 text-pink-400 font-black text-sm uppercase tracking-widest shadow-lg select-none touch-none transition-transform active:scale-90"
-                  style={{
-                    boxShadow: '0 0 15px rgba(236, 72, 153, 0.4)',
-                    backdropFilter: 'blur(4px)',
-                    WebkitBackdropFilter: 'blur(4px)'
-                  }}
-                  onPointerDown={() => { inputManager.virtualInputs.punch = true; }}
-                  onPointerUp={() => { inputManager.virtualInputs.punch = false; }}
-                  onPointerLeave={() => { inputManager.virtualInputs.punch = false; }}
-                >
-                  Punch
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
