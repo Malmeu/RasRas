@@ -167,12 +167,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       itemContainer = new Container();
       const fighterContainer = new Container();
       const effectContainer = new Container();
+      const speechBubbleContainer = new Container();
 
       worldContainer.addChild(backgroundContainer);
       worldContainer.addChild(ringContainer);
       worldContainer.addChild(itemContainer);
       worldContainer.addChild(fighterContainer);
       worldContainer.addChild(effectContainer);
+      worldContainer.addChild(speechBubbleContainer);
 
             // Créer les supporters autour du ring
       const crowdColors = [0xef4444, 0x3b82f6, 0x10b981, 0xf59e0b, 0x8b5cf6, 0xec4899, 0x14b8a6, 0x6366f1];
@@ -187,6 +189,20 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       for (let x = 40; x <= width - 40; x += 40) {
         const px = x + (Math.random() - 0.5) * 8;
         const py = bottomLimit + 30 + Math.random() * 5;
+        const color = crowdColors[Math.floor(Math.random() * crowdColors.length)];
+        crowdMembers.push(createCrowdMember(crowdContainer, px, py, color));
+      }
+      // Supporters de gauche (assis sur les bancs de gauche)
+      for (let y = topLimit + 20; y <= bottomLimit - 20; y += 45) {
+        const px = leftLimit - 58 + (Math.random() - 0.5) * 6;
+        const py = y + (Math.random() - 0.5) * 8;
+        const color = crowdColors[Math.floor(Math.random() * crowdColors.length)];
+        crowdMembers.push(createCrowdMember(crowdContainer, px, py, color));
+      }
+      // Supporters de droite (assis sur les bancs de droite)
+      for (let y = topLimit + 20; y <= bottomLimit - 20; y += 45) {
+        const px = rightLimit + 58 + (Math.random() - 0.5) * 6;
+        const py = y + (Math.random() - 0.5) * 8;
         const color = crowdColors[Math.floor(Math.random() * crowdColors.length)];
         crowdMembers.push(createCrowdMember(crowdContainer, px, py, color));
       }
@@ -515,7 +531,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
             // Effet fade-out
             ab.container.alpha -= 0.08 * dt;
             if (ab.container.alpha <= 0) {
-              crowdContainer.removeChild(ab.container);
+              speechBubbleContainer.removeChild(ab.container);
               ab.container.destroy({ children: true });
               activeBubbles.splice(i, 1);
             }
@@ -530,7 +546,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
             const m = crowdMembers[ab.supporterIndex];
             if (m) {
               ab.container.x = m.container.x;
-              ab.container.y = m.container.y - 12;
+              ab.container.y = m.y < ringCenter.y ? m.container.y + 12 : m.container.y - 12;
             }
           }
         }
@@ -555,7 +571,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           const alreadyHasBubble = activeBubbles.some(ab => ab.supporterIndex === supporterIndex);
           if (!alreadyHasBubble) {
             const bubble = createSpeechBubble(text, supporter, supporterIndex);
-            crowdContainer.addChild(bubble.container);
+            speechBubbleContainer.addChild(bubble.container);
             activeBubbles.push(bubble);
           }
         }
@@ -1105,48 +1121,69 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         text,
         style: {
           fontFamily: 'Outfit',
-          fontSize: 8,
+          fontSize: 12,
           fontWeight: '900',
           fill: 0x111111,
           align: 'center',
           wordWrap: true,
-          wordWrapWidth: 100,
+          wordWrapWidth: 130,
         }
       });
       textObj.anchor.set(0.5);
 
-      const paddingX = 6;
-      const paddingY = 4;
+      const paddingX = 8;
+      const paddingY = 6;
       const textWidth = textObj.width;
       const textHeight = textObj.height;
-      const bubbleWidth = Math.max(55, textWidth + paddingX * 2);
+      const bubbleWidth = Math.max(65, textWidth + paddingX * 2);
       const bubbleHeight = textHeight + paddingY * 2;
 
       const bg = new Graphics();
+      const isTopSupporter = supporter.y < ringCenter.y;
       
-      // Dessiner le fond (remplissage blanc)
-      bg.roundRect(-bubbleWidth / 2, -bubbleHeight - 6, bubbleWidth, bubbleHeight, 5);
-      bg.moveTo(-4, -6);
-      bg.lineTo(4, -6);
-      bg.lineTo(0, -1);
-      bg.closePath();
-      bg.fill({ color: 0xffffff });
+      if (isTopSupporter) {
+        // Dessiner le fond (remplissage blanc) orienté vers le bas
+        bg.roundRect(-bubbleWidth / 2, 6, bubbleWidth, bubbleHeight, 6);
+        bg.moveTo(-5, 6);
+        bg.lineTo(5, 6);
+        bg.lineTo(0, 1);
+        bg.closePath();
+        bg.fill({ color: 0xffffff });
 
-      // Dessiner le contour noir (stroke)
-      bg.roundRect(-bubbleWidth / 2, -bubbleHeight - 6, bubbleWidth, bubbleHeight, 5);
-      bg.moveTo(-4, -6);
-      bg.lineTo(0, -1);
-      bg.lineTo(4, -6);
-      bg.stroke({ width: 1.2, color: 0x111111 });
+        // Dessiner le contour noir (stroke)
+        bg.roundRect(-bubbleWidth / 2, 6, bubbleWidth, bubbleHeight, 6);
+        bg.moveTo(-5, 6);
+        bg.lineTo(0, 1);
+        bg.lineTo(5, 6);
+        bg.stroke({ width: 1.5, color: 0x111111 });
 
-      textObj.x = 0;
-      textObj.y = -bubbleHeight / 2 - 6;
+        textObj.x = 0;
+        textObj.y = bubbleHeight / 2 + 6;
+      } else {
+        // Dessiner le fond (remplissage blanc) orienté vers le haut
+        bg.roundRect(-bubbleWidth / 2, -bubbleHeight - 6, bubbleWidth, bubbleHeight, 6);
+        bg.moveTo(-5, -6);
+        bg.lineTo(5, -6);
+        bg.lineTo(0, -1);
+        bg.closePath();
+        bg.fill({ color: 0xffffff });
+
+        // Dessiner le contour noir (stroke)
+        bg.roundRect(-bubbleWidth / 2, -bubbleHeight - 6, bubbleWidth, bubbleHeight, 6);
+        bg.moveTo(-5, -6);
+        bg.lineTo(0, -1);
+        bg.lineTo(5, -6);
+        bg.stroke({ width: 1.5, color: 0x111111 });
+
+        textObj.x = 0;
+        textObj.y = -bubbleHeight / 2 - 6;
+      }
 
       const bubbleContainer = new Container();
       bubbleContainer.addChild(bg);
       bubbleContainer.addChild(textObj);
       bubbleContainer.x = supporter.x;
-      bubbleContainer.y = supporter.y - 12;
+      bubbleContainer.y = isTopSupporter ? supporter.y + 12 : supporter.y - 12;
       bubbleContainer.scale.set(0);
 
       return {
