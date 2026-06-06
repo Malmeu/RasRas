@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { Pause, Play, Flame } from 'lucide-react';
+import { Pause, Play, Flame, Gamepad, Volume2, VolumeX } from 'lucide-react';
 
 interface HUDProps {
   p1Name: string;
@@ -23,6 +23,10 @@ interface HUDProps {
   gameTime: number;
   isPaused: boolean;
   onTogglePause: () => void;
+  showMobileControls: boolean;
+  onToggleMobileControls: () => void;
+  soundEnabled: boolean;
+  onToggleSound: () => void;
 }
 
 export const HUD: React.FC<HUDProps> = ({
@@ -41,6 +45,10 @@ export const HUD: React.FC<HUDProps> = ({
   gameTime,
   isPaused,
   onTogglePause,
+  showMobileControls,
+  onToggleMobileControls,
+  soundEnabled,
+  onToggleSound,
 }) => {
   // Valeurs atténuées (pour les barres de vie avec délai "red damage bar")
   const [p1HpDelayed, setP1HpDelayed] = useState(p1Hp);
@@ -159,13 +167,35 @@ export const HUD: React.FC<HUDProps> = ({
             </span>
           </div>
 
-          {/* Bouton de Pause */}
-          <button
-            onClick={onTogglePause}
-            className="pointer-events-auto mt-2 p-1-5 rounded-lg bg-slate-900-60 border border-white-10 text-zinc-400 hover:text-white transition-all duration-200"
-          >
-            {isPaused ? <Play size={12} /> : <Pause size={12} />}
-          </button>
+          {/* Boutons utilitaires regroupés au centre */}
+          <div className="flex items-center gap-1.5 mt-2 pointer-events-auto">
+            <button
+              onClick={onToggleMobileControls}
+              className={`p-1 rounded-lg border transition-all duration-200 flex items-center justify-center ${showMobileControls ? 'bg-pink-600 border-pink-500 text-white' : 'bg-slate-900-60 border-white-10 text-zinc-400 hover:text-white hover:bg-slate-800'}`}
+              title="Contrôles tactiles (Mobile)"
+              style={{ width: '26px', height: '26px' }}
+            >
+              <Gamepad size={13} />
+            </button>
+            
+            <button
+              onClick={onTogglePause}
+              className="p-1 rounded-lg bg-slate-900-60 border border-white-10 text-zinc-400 hover:text-white hover:bg-slate-800 transition-all duration-200 flex items-center justify-center"
+              title={isPaused ? 'Reprendre' : 'Pause'}
+              style={{ width: '26px', height: '26px' }}
+            >
+              {isPaused ? <Play size={13} /> : <Pause size={13} />}
+            </button>
+
+            <button
+              onClick={onToggleSound}
+              className="p-1 rounded-lg bg-slate-900-60 border border-white-10 text-zinc-400 hover:text-white hover:bg-slate-800 transition-all duration-200 flex items-center justify-center"
+              title={soundEnabled ? 'Couper le son' : 'Activer le son'}
+              style={{ width: '26px', height: '26px' }}
+            >
+              {soundEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
+            </button>
+          </div>
         </div>
 
         {/* JOUEUR 2 HUD (Droite) */}

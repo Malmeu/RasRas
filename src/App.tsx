@@ -233,25 +233,27 @@ function App() {
   return (
     <div className="min-h-screen bg-slate-950 font-sans flex flex-col justify-between text-white relative select-none">
       
-      {/* Barre de contrôle utilitaire en haut à droite (Sons / Aide / Tactile) */}
-      <div className="absolute top-6 right-6 flex items-center gap-3 z-50 pointer-events-auto">
-        <button
-          onClick={() => setShowMobileControls(!showMobileControls)}
-          className={`p-2-5 rounded-full border transition-all duration-200 shadow-md flex items-center justify-center ${showMobileControls ? 'bg-pink-600 border-pink-500 text-white' : 'bg-slate-900-60 border-white-10 text-zinc-400 hover:text-white hover:bg-slate-800'}`}
-          title="Contrôles tactiles (Mobile)"
-          style={{ width: '38px', height: '38px' }}
-        >
-          <Gamepad size={16} />
-        </button>
-        <button
-          onClick={toggleSound}
-          className="p-2-5 rounded-full bg-slate-900-60 border border-white-10 hover:bg-slate-800 text-zinc-400 hover:text-white transition-all duration-200 shadow-md flex items-center justify-center"
-          title={soundEnabled ? 'Couper le son' : 'Activer le son'}
-          style={{ width: '38px', height: '38px' }}
-        >
-          {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-        </button>
-      </div>
+      {/* Barre de contrôle utilitaire en haut à droite (Sons / Aide / Tactile) - Masquée pendant le combat, intégrée au HUD */}
+      {screen !== 'game' && (
+        <div className="absolute top-6 right-6 flex items-center gap-3 z-50 pointer-events-auto">
+          <button
+            onClick={() => setShowMobileControls(!showMobileControls)}
+            className={`p-2-5 rounded-full border transition-all duration-200 shadow-md flex items-center justify-center ${showMobileControls ? 'bg-pink-600 border-pink-500 text-white' : 'bg-slate-900-60 border-white-10 text-zinc-400 hover:text-white hover:bg-slate-800'}`}
+            title="Contrôles tactiles (Mobile)"
+            style={{ width: '38px', height: '38px' }}
+          >
+            <Gamepad size={16} />
+          </button>
+          <button
+            onClick={toggleSound}
+            className="p-2-5 rounded-full bg-slate-900-60 border border-white-10 hover:bg-slate-800 text-zinc-400 hover:text-white transition-all duration-200 shadow-md flex items-center justify-center"
+            title={soundEnabled ? 'Couper le son' : 'Activer le son'}
+            style={{ width: '38px', height: '38px' }}
+          >
+            {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+          </button>
+        </div>
+      )}
 
       {/* RENDER DES DIFFÉRENTS ÉCRANS */}
       {screen === 'menu' && (
@@ -267,31 +269,55 @@ function App() {
       )}
 
       {screen === 'game' && p1Char && p2Char && (
-        <div className="flex-1 flex flex-col items-center justify-center min-h-screen px-4 py-8 relative overflow-hidden bg-slate-950">
-          {/* Grille de fond en style CSS */}
-          <div className="absolute inset-0 bg-slate-950 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(120,50,200,0.15) 0%, transparent 80%)' }} />
+        <div className={`flex-1 flex flex-col items-center justify-center min-h-screen relative overflow-hidden bg-slate-950 ${showMobileControls ? 'p-0' : 'px-4 py-8'}`}>
+          
+          {/* Grille de fond en style CSS (desktop uniquement) */}
+          {!showMobileControls && (
+            <div className="absolute inset-0 bg-slate-950 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(120,50,200,0.15) 0%, transparent 80%)' }} />
+          )}
 
-          {/* En-tête informatif */}
-          <div className="text-center mb-4 relative z-10 flex flex-col items-center">
-            <h2 className="text-xl font-black uppercase tracking-widest text-pink-400" style={{ filter: 'drop-shadow(0 0 10px rgba(219,39,119,0.3))' }}>
-              {gameMode === 'solo' ? 'Combat Solo' : gameMode === 'versus' ? 'Confrontation Locale' : 'Arène En Ligne'}
-            </h2>
-            {gameMode === 'solo' && (
-              <span className="text-10px font-bold text-zinc-500 uppercase tracking-widest bg-white-5 border border-white-5 px-2 py-1 rounded mt-1">
-                IA : {difficulty === 'easy' ? 'Facile' : difficulty === 'normal' ? 'Normal' : 'Difficile'}
-              </span>
-            )}
-            {gameMode === 'online' && (
-              <span className="text-10px font-bold text-pink-400 uppercase tracking-widest bg-white-5 border border-pink-500-20 px-2 py-1 rounded mt-1">
-                Rôle : {onlineRole === 'host' ? 'Créateur (Hôte)' : 'Invité (Client)'}
-              </span>
-            )}
-          </div>
+          {/* En-tête informatif (desktop uniquement, masqué sur mobile pour le plein écran) */}
+          {!showMobileControls && (
+            <div className="text-center mb-4 relative z-10 flex flex-col items-center">
+              <h2 className="text-xl font-black uppercase tracking-widest text-pink-400" style={{ filter: 'drop-shadow(0 0 10px rgba(219,39,119,0.3))' }}>
+                {gameMode === 'solo' ? 'Combat Solo' : gameMode === 'versus' ? 'Confrontation Locale' : 'Arène En Ligne'}
+              </h2>
+              {gameMode === 'solo' && (
+                <span className="text-10px font-bold text-zinc-500 uppercase tracking-widest bg-white-5 border border-white-5 px-2 py-1 rounded mt-1">
+                  IA : {difficulty === 'easy' ? 'Facile' : difficulty === 'normal' ? 'Normal' : 'Difficile'}
+                </span>
+              )}
+              {gameMode === 'online' && (
+                <span className="text-10px font-bold text-pink-400 uppercase tracking-widest bg-white-5 border border-pink-500-20 px-2 py-1 rounded mt-1">
+                  Rôle : {onlineRole === 'host' ? 'Créateur (Hôte)' : 'Invité (Client)'}
+                </span>
+              )}
+            </div>
+          )}
 
-          {/* Arène de jeu principale */}
+          {/* Arène de jeu principale (Responsive et dimensionnée au ratio exact) */}
           <div 
-            className="relative rounded-2xl overflow-hidden bg-slate-950 border border-white-10 shadow-box-over w-full"
-            style={{ maxWidth: '800px', aspectRatio: '800 / 550' }}
+            className={showMobileControls ? "mobile-arena-container" : "desktop-arena-container"}
+            style={showMobileControls ? {
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100vw',
+              height: '100vh',
+              overflow: 'hidden',
+              backgroundColor: '#0c0c14',
+              zIndex: 20
+            } : {
+              position: 'relative',
+              borderRadius: '1rem',
+              overflow: 'hidden',
+              backgroundColor: '#12121c',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8)',
+              width: '100%',
+              maxWidth: '800px',
+              aspectRatio: '800 / 550'
+            }}
           >
             {/* Canvas PixiJS de combat */}
             <GameCanvas
@@ -305,6 +331,7 @@ function App() {
               socket={socket}
               onlineRole={onlineRole}
               roomCode={roomCode}
+              isMobile={showMobileControls}
             />
 
             {/* Overlay d'effet KO "KIIIIW" de Street Fighter */}
@@ -334,6 +361,10 @@ function App() {
                 gameTime={liveData.gameTime}
                 isPaused={isPaused}
                 onTogglePause={() => setIsPaused(!isPaused)}
+                showMobileControls={showMobileControls}
+                onToggleMobileControls={() => setShowMobileControls(!showMobileControls)}
+                soundEnabled={soundEnabled}
+                onToggleSound={toggleSound}
               />
             </div>
 
@@ -359,74 +390,74 @@ function App() {
                 </div>
               </div>
             )}
+          </div>
 
-            {/* Overlay des contrôles tactiles mobiles transparents aux extrémités de l'arène */}
-            {showMobileControls && (
-              <div className="mobile-controls-overlay">
-                {/* Stick directionnel à gauche */}
-                <div className={`mobile-joystick-container ${isJoystickActive ? 'active' : ''}`}>
+          {/* Overlay des contrôles tactiles mobiles fixés aux extrémités physiques de l'écran du téléphone */}
+          {showMobileControls && (
+            <div className="mobile-controls-overlay">
+              {/* Stick directionnel à gauche */}
+              <div className={`mobile-joystick-container ${isJoystickActive ? 'active' : ''}`}>
+                <div 
+                  className="mobile-joystick-base"
+                  onPointerDown={handleJoystickDown}
+                  onPointerMove={handleJoystickMove}
+                  onPointerUp={handleJoystickUp}
+                  onPointerLeave={handleJoystickUp}
+                >
                   <div 
-                    className="mobile-joystick-base"
-                    onPointerDown={handleJoystickDown}
-                    onPointerMove={handleJoystickMove}
-                    onPointerUp={handleJoystickUp}
-                    onPointerLeave={handleJoystickUp}
-                  >
-                    <div 
-                      className="mobile-joystick-handle"
-                      style={{
-                        transform: `translate(${joystickOffset.x}px, ${joystickOffset.y}px)`,
-                        transition: isJoystickActive ? 'none' : 'transform 0.15s ease-out',
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* Boutons d'action à droite */}
-                <div className="mobile-buttons-container">
-                  {/* Parade */}
-                  <button
-                    className="mobile-action-btn mobile-btn-block"
-                    onPointerDown={() => { inputManager.virtualInputs.block = true; }}
-                    onPointerUp={() => { inputManager.virtualInputs.block = false; }}
-                    onPointerLeave={() => { inputManager.virtualInputs.block = false; }}
-                  >
-                    Parer
-                  </button>
-
-                  {/* Esquive */}
-                  <button
-                    className="mobile-action-btn mobile-btn-dash"
-                    onPointerDown={() => { inputManager.virtualInputs.dash = true; }}
-                    onPointerUp={() => { inputManager.virtualInputs.dash = false; }}
-                    onPointerLeave={() => { inputManager.virtualInputs.dash = false; }}
-                  >
-                    Dash
-                  </button>
-
-                  {/* Frappe */}
-                  <button
-                    className="mobile-action-btn mobile-btn-punch"
-                    onPointerDown={() => { inputManager.virtualInputs.punch = true; }}
-                    onPointerUp={() => { inputManager.virtualInputs.punch = false; }}
-                    onPointerLeave={() => { inputManager.virtualInputs.punch = false; }}
-                  >
-                    Punch
-                  </button>
+                    className="mobile-joystick-handle"
+                    style={{
+                      transform: `translate(${joystickOffset.x}px, ${joystickOffset.y}px)`,
+                      transition: isJoystickActive ? 'none' : 'transform 0.15s ease-out',
+                    }}
+                  />
                 </div>
               </div>
-            )}
-          </div>
 
-          {/* Aide-mémoire des touches en bas du jeu */}
-          <div className="mt-4 text-10px text-zinc-500 tracking-wider uppercase font-semibold flex gap-6">
-            <span>P1 : ZQSD / WASD + Espace (Frapper) + Shift (Dash) + C (Parer)</span>
-            {gameMode === 'versus' && (
-              <span>P2 : Flèches + K (Frapper) + L (Dash) + I (Parer)</span>
-            )}
-          </div>
+              {/* Boutons d'action à droite */}
+              <div className="mobile-buttons-container">
+                {/* Parade */}
+                <button
+                  className="mobile-action-btn mobile-btn-block"
+                  onPointerDown={() => { inputManager.virtualInputs.block = true; }}
+                  onPointerUp={() => { inputManager.virtualInputs.block = false; }}
+                  onPointerLeave={() => { inputManager.virtualInputs.block = false; }}
+                >
+                  Parer
+                </button>
 
+                {/* Esquive */}
+                <button
+                  className="mobile-action-btn mobile-btn-dash"
+                  onPointerDown={() => { inputManager.virtualInputs.dash = true; }}
+                  onPointerUp={() => { inputManager.virtualInputs.dash = false; }}
+                  onPointerLeave={() => { inputManager.virtualInputs.dash = false; }}
+                >
+                  Dash
+                </button>
 
+                {/* Frappe */}
+                <button
+                  className="mobile-action-btn mobile-btn-punch"
+                  onPointerDown={() => { inputManager.virtualInputs.punch = true; }}
+                  onPointerUp={() => { inputManager.virtualInputs.punch = false; }}
+                  onPointerLeave={() => { inputManager.virtualInputs.punch = false; }}
+                >
+                  Punch
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Aide-mémoire des touches en bas du jeu (desktop uniquement) */}
+          {!showMobileControls && (
+            <div className="mt-4 text-10px text-zinc-500 tracking-wider uppercase font-semibold flex gap-6">
+              <span>P1 : ZQSD / WASD + Espace (Frapper) + Shift (Dash) + C (Parer)</span>
+              {gameMode === 'versus' && (
+                <span>P2 : Flèches + K (Frapper) + L (Dash) + I (Parer)</span>
+              )}
+            </div>
+          )}
         </div>
       )}
 

@@ -45,8 +45,13 @@ body {
   font-family: var(--font-sans);
   background-color: var(--bg-slate-950);
   color: #ffffff;
-  overflow-x: hidden;
+  overflow: hidden;
   -webkit-font-smoothing: antialiased;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
 }
 
 /* 2. Utilitaires de Layout (Flexbox & Grid) */
@@ -434,14 +439,14 @@ button:hover {
 /* --- CONTRÔLES TACTILES MOBILES (PREMIUM DESIGN) --- */
 
 .mobile-controls-overlay {
-  position: absolute;
+  position: fixed; /* Fixé aux bords physiques de l'écran du téléphone */
   inset: 0;
   pointer-events: none;
   user-select: none;
   display: flex;
   justify-content: space-between;
   align-items: center; /* Centrer verticalement au milieu de l'arène */
-  padding: 1.5rem 1rem;
+  padding: 1.5rem 2.5rem; /* Marges pour éviter l'encoche et les bords incurvés */
   z-index: 100; /* Assure que c'est bien au-dessus de PixiJS (z-index 1) et de la pause (z-index 40) */
   touch-action: none;
 }

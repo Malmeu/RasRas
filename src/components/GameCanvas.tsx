@@ -32,6 +32,7 @@ interface GameCanvasProps {
   socket?: any;
   onlineRole?: 'host' | 'client' | null;
   roomCode?: string;
+  isMobile?: boolean;
 }
 
 interface DroppedItem {
@@ -72,6 +73,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   socket,
   onlineRole,
   roomCode,
+  isMobile = false,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -102,12 +104,22 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const crowdMembers: CrowdMember[] = [];
     const activeBubbles: { container: Container; timer: number; maxTime: number; supporterIndex: number; }[] = [];
 
-    // Dimensions du canvas
-    const width = 800;
-    const height = 550;
+    // Dimensions du canvas (dynamiques sur mobile plein écran)
+    const width = isMobile ? window.innerWidth : 800;
+    const height = isMobile ? window.innerHeight : 550;
+
+    // Dimensions physiques constantes du ring pour conserver le gameplay d'origine
+    const ringWidth = 464;
+    const ringHeight = 325;
 
     // Centre du Ring de combat
     const ringCenter = { x: width / 2, y: height / 2 + 10 };
+
+    // Limites physiques du ring
+    const leftLimit = ringCenter.x - ringWidth / 2;
+    const rightLimit = ringCenter.x + ringWidth / 2;
+    const topLimit = ringCenter.y - ringHeight / 2;
+    const bottomLimit = ringCenter.y + ringHeight / 2;
 
     async function initPixi() {
       console.log('[GameCanvas] initPixi démarré. gameMode:', gameMode, 'socket connecté:', socket?.connected, 'socket ID:', socket?.id, 'onlineRole:', onlineRole, 'roomCode:', roomCode);
@@ -162,19 +174,19 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       worldContainer.addChild(fighterContainer);
       worldContainer.addChild(effectContainer);
 
-      // Créer les supporters autour du ring
+            // Créer les supporters autour du ring
       const crowdColors = [0xef4444, 0x3b82f6, 0x10b981, 0xf59e0b, 0x8b5cf6, 0xec4899, 0x14b8a6, 0x6366f1];
-      // Supporters du haut (déplacés vers y=82 pour ne pas être cachés par le HUD noir)
-      for (let x = 60; x <= 740; x += 40) {
+      // Supporters du haut (positionnés au-dessus du ring)
+      for (let x = 40; x <= width - 40; x += 40) {
         const px = x + (Math.random() - 0.5) * 8;
-        const py = 82 + Math.random() * 5;
+        const py = topLimit - 28 + Math.random() * 5;
         const color = crowdColors[Math.floor(Math.random() * crowdColors.length)];
         crowdMembers.push(createCrowdMember(crowdContainer, px, py, color));
       }
-      // Supporters du bas (remontés vers y=465 pour être plus visibles)
-      for (let x = 60; x <= 740; x += 40) {
+      // Supporters du bas (positionnés en dessous du ring)
+      for (let x = 40; x <= width - 40; x += 40) {
         const px = x + (Math.random() - 0.5) * 8;
-        const py = 465 + Math.random() * 5;
+        const py = bottomLimit + 30 + Math.random() * 5;
         const color = crowdColors[Math.floor(Math.random() * crowdColors.length)];
         crowdMembers.push(createCrowdMember(crowdContainer, px, py, color));
       }
@@ -303,7 +315,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
           if (opponent) {
             opponent.equipWeapon(data.itemType);
-            soundManager.play('block', { pan: (opponent.x - 400) / 400, pitchVariation: 0.1, volumeScale: 1.0 });
+            soundManager.play('block', { pan: (opponent.x - ringCenter.x) / ringCenter.x, pitchVariation: 0.1, volumeScale: 1.0 });
           }
         });
 
@@ -387,11 +399,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               
               const types: ('baseball_bat' | 'knife' | 'bottle')[] = ['baseball_bat', 'knife', 'bottle'];
               const type = types[Math.floor(Math.random() * types.length)];
-              const targetX = Math.random() * (560 - 240) + 240;
-              const targetY = Math.random() * (380 - 160) + 160;
+              const targetX = Math.random() * ((rightLimit - 72) - (leftLimit + 72)) + (leftLimit + 72);
+              const targetY = Math.random() * ((bottomLimit - 55) - (topLimit + 50)) + (topLimit + 50);
               
               let startX = ringCenter.x;
-              let startY = ringCenter.y + 400;
+              let startY = height + 100; // Hors écran du bas
               let launcherIndex = -1;
 
               if (crowdMembers.length > 0) {
@@ -697,10 +709,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     function updateRingAnimation(ropes: Graphics, p1: Fighter, p2: Fighter) {
       ropes.clear();
 
-      const left = 168;
-      const right = 632;
-      const top = 110;
-      const bottom = 435;
+      const left = leftLimit;
+      const right = rightLimit;
+      const top = topLimit;
+      const bottom = bottomLimit;
 
       // 1. Corde du haut (Top)
       let topCtrlY = top;
@@ -749,31 +761,31 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     // Empêche les combattants de sortir du ring rectangulaire et simule le rebond
     function keepInRing(fighter: Fighter) {
-      const leftLimit = 168 + fighter.radius;
-      const rightLimit = 632 - fighter.radius;
-      const topLimit = 110 + fighter.radius;
-      const bottomLimit = 435 - fighter.radius;
+      const leftLimitVal = leftLimit + fighter.radius;
+      const rightLimitVal = rightLimit - fighter.radius;
+      const topLimitVal = topLimit + fighter.radius;
+      const bottomLimitVal = bottomLimit - fighter.radius;
 
       let hitCorde = false;
       let bounceX = false;
       let bounceY = false;
 
-      if (fighter.x < leftLimit) {
-        fighter.x = leftLimit;
+      if (fighter.x < leftLimitVal) {
+        fighter.x = leftLimitVal;
         bounceX = true;
         hitCorde = true;
-      } else if (fighter.x > rightLimit) {
-        fighter.x = rightLimit;
+      } else if (fighter.x > rightLimitVal) {
+        fighter.x = rightLimitVal;
         bounceX = true;
         hitCorde = true;
       }
 
-      if (fighter.y < topLimit) {
-        fighter.y = topLimit;
+      if (fighter.y < topLimitVal) {
+        fighter.y = topLimitVal;
         bounceY = true;
         hitCorde = true;
-      } else if (fighter.y > bottomLimit) {
-        fighter.y = bottomLimit;
+      } else if (fighter.y > bottomLimitVal) {
+        fighter.y = bottomLimitVal;
         bounceY = true;
         hitCorde = true;
       }
@@ -787,7 +799,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           fighter.vy = -fighter.vy * bounceFactor;
         }
 
-        soundManager.play('block', { pan: (fighter.x - 400) / 400, volumeScale: 0.4 });
+        soundManager.play('block', { pan: (fighter.x - ringCenter.x) / ringCenter.x, volumeScale: 0.4 });
         stateRef.current.cameraShake = Math.max(stateRef.current.cameraShake, 5);
       }
     }
@@ -1181,7 +1193,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               soundName = 'hit';
               vol = 0.45;
             }
-            soundManager.play(soundName, { pan: (item.x - 400) / 400, pitchVariation: 0.3, volumeScale: vol });
+            soundManager.play(soundName, { pan: (item.x - ringCenter.x) / ringCenter.x, pitchVariation: 0.3, volumeScale: vol });
           }
         } else {
           if (gameMode === 'online') {
@@ -1190,7 +1202,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               const dist = Math.hypot(localFighter.x - item.x, localFighter.y - item.y);
               if (dist < localFighter.radius + 10) {
                 localFighter.equipWeapon(item.type);
-                soundManager.play('block', { pan: (localFighter.x - 400) / 400, pitchVariation: 0.1, volumeScale: 1.0 });
+                soundManager.play('block', { pan: (localFighter.x - ringCenter.x) / ringCenter.x, pitchVariation: 0.1, volumeScale: 1.0 });
 
                 particles?.emitBlockSparks(item.x, item.y);
 
@@ -1218,7 +1230,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               const dist = Math.hypot(fighter.x - item.x, fighter.y - item.y);
               if (dist < fighter.radius + 10) {
                 fighter.equipWeapon(item.type);
-                soundManager.play('block', { pan: (fighter.x - 400) / 400, pitchVariation: 0.1, volumeScale: 1.0 });
+                soundManager.play('block', { pan: (fighter.x - ringCenter.x) / ringCenter.x, pitchVariation: 0.1, volumeScale: 1.0 });
 
                 particles?.emitBlockSparks(item.x, item.y);
 
