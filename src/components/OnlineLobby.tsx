@@ -7,7 +7,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { Swords, Zap, Heart, User, Users, Globe, Play } from 'lucide-react';
+import { Swords, User, Users, Globe, Play } from 'lucide-react';
 import { soundManager } from '../game/SoundManager';
 import { CHARACTERS, type Character } from './CharacterSelection';
 
@@ -353,7 +353,7 @@ export const OnlineLobby: React.FC<OnlineLobbyProps> = ({ onBack, onGameStart })
           </div>
 
           {/* Grille de sélection des personnages */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
             {CHARACTERS.map((char) => {
               const isSelectedLocal = localChar?.id === char.id;
               const isSelectedOpponent = opponentChar?.id === char.id;
@@ -363,13 +363,13 @@ export const OnlineLobby: React.FC<OnlineLobbyProps> = ({ onBack, onGameStart })
                   key={char.id}
                   onClick={() => handleSelectCharacter(char)}
                   onMouseEnter={playHoverSound}
-                  className={`group cursor-pointer rounded-3xl p-6 border backdrop-blur-md transition-all duration-300 transform flex flex-col justify-between h-p450 relative overflow-hidden ${
+                  className={`group cursor-pointer rounded-2xl p-4 border backdrop-blur-md transition-all duration-300 transform flex flex-col justify-between relative overflow-hidden ${
                     isSelectedLocal
                       ? 'bg-pink-950-20 border-pink-500 scale-[1.02]'
                       : 'bg-slate-950-50 border-white-10 hover:border-pink-500-50'
                   }`}
                   style={isSelectedLocal ? {
-                    boxShadow: '0 0 25px rgba(219,39,119,0.25)'
+                    boxShadow: '0 0 20px rgba(219,39,119,0.25)'
                   } : {}}
                 >
                   <div
@@ -377,73 +377,59 @@ export const OnlineLobby: React.FC<OnlineLobbyProps> = ({ onBack, onGameStart })
                     style={{ background: `radial-gradient(circle at center, ${char.colorHex} 0%, transparent 70%)` }}
                   />
 
-                  {/* Tête de combattant en CSS */}
-                  <div className="flex justify-center items-center py-6">
+                  {/* Tête de combattant en CSS réduite */}
+                  <div className="flex justify-center items-center py-3">
                     <div
-                      className="w-20 h-20 rounded-full border-3 border-zinc-950 relative transition-transform duration-300 group-hover:scale-110 flex items-center justify-center"
+                      className="w-16 h-16 rounded-full border-2 border-zinc-950 relative transition-transform duration-300 group-hover:scale-105 flex items-center justify-center"
                       style={{ backgroundColor: char.colorHex }}
                     >
-                      <div className="absolute top-[35%] left-[20%] w-4 h-4 rounded-full bg-white border border-black flex items-center justify-center">
+                      <div className="absolute top-[35%] left-[20%] w-3.5 h-3.5 rounded-full bg-white border border-black flex items-center justify-center">
                         <div className="w-1.5 h-1.5 rounded-full bg-zinc-950 translate-x-1px translate-y-1px" />
                       </div>
-                      <div className="absolute top-[35%] right-[20%] w-4 h-4 rounded-full bg-white border border-black flex items-center justify-center">
+                      <div className="absolute top-[35%] right-[20%] w-3.5 h-3.5 rounded-full bg-white border border-black flex items-center justify-center">
                         <div className="w-1.5 h-1.5 rounded-full bg-zinc-950 translate-x-1px translate-y-1px" />
                       </div>
-                      <div className="absolute bottom-[-3px] left-[-10px] w-6.5 h-6.5 rounded-full border-2 border-zinc-950" style={{ backgroundColor: char.gloveColorHex }} />
-                      <div className="absolute bottom-[-3px] right-[-10px] w-6.5 h-6.5 rounded-full border-2 border-zinc-950" style={{ backgroundColor: char.gloveColorHex }} />
+                      <div className="absolute bottom-[-3px] left-[-8px] w-5.5 h-5.5 rounded-full border-2 border-zinc-950" style={{ backgroundColor: char.gloveColorHex }} />
+                      <div className="absolute bottom-[-3px] right-[-8px] w-5.5 h-5.5 rounded-full border-2 border-zinc-950" style={{ backgroundColor: char.gloveColorHex }} />
                     </div>
                   </div>
 
-                  {/* Contenu textuel */}
-                  <div>
-                    <h3 className="text-lg font-black uppercase text-white mb-2 tracking-tight">
+                  {/* Contenu textuel et statistiques en ligne */}
+                  <div className="flex flex-col gap-3">
+                    <h3 className="text-sm font-black uppercase text-center text-white tracking-tight">
                       {char.name}
                     </h3>
-                    <p className="text-10px text-zinc-400 leading-relaxed mb-4" style={{ minHeight: '40px' }}>
-                      {char.description}
-                    </p>
 
-                    {/* Statistiques barres */}
-                    <div className="flex flex-col gap-2 bg-black-30 p-3.5 rounded-2xl border border-white-5">
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex justify-between text-9px uppercase font-bold text-zinc-400">
-                          <span className="flex items-center gap-1"><Heart size={8} /> Vie</span>
-                          <span className="text-white font-mono">{char.maxHp} HP</span>
-                        </div>
-                        <div className="w-full h-1 bg-zinc-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-red-500" style={{ width: `${(char.maxHp / 120) * 100}%` }} />
-                        </div>
+                    {/* Statistiques en ligne */}
+                    <div className="grid grid-cols-4 gap-1 bg-black-30 p-2 rounded-xl border border-white-5 text-[9px] font-bold text-center text-zinc-300 font-mono">
+                      <div className="flex flex-col items-center justify-center gap-0.5">
+                        <span className="text-red-500 font-mono">{char.maxHp}</span>
+                        <span className="text-[7px] text-zinc-500 uppercase font-sans">HP</span>
                       </div>
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex justify-between text-9px uppercase font-bold text-zinc-400">
-                          <span className="flex items-center gap-1"><Zap size={8} /> Vitesse</span>
-                          <span className="text-white font-mono">{char.speed.toFixed(1)}</span>
-                        </div>
-                        <div className="w-full h-1 bg-zinc-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-cyan-400" style={{ width: `${(char.speed / 6) * 100}%` }} />
-                        </div>
+                      <div className="flex flex-col items-center justify-center gap-0.5 border-l border-white-5">
+                        <span className="text-cyan-400 font-mono">{char.speed.toFixed(1)}</span>
+                        <span className="text-[7px] text-zinc-500 uppercase font-sans">SPD</span>
                       </div>
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex justify-between text-9px uppercase font-bold text-zinc-400">
-                          <span className="flex items-center gap-1"><Swords size={8} /> Puissance</span>
-                          <span className="text-white font-mono">{char.power}</span>
-                        </div>
-                        <div className="w-full h-1 bg-zinc-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-orange-500" style={{ width: `${(char.power / 10) * 100}%` }} />
-                        </div>
+                      <div className="flex flex-col items-center justify-center gap-0.5 border-l border-white-5">
+                        <span className="text-orange-500 font-mono">{char.power}</span>
+                        <span className="text-[7px] text-zinc-500 uppercase font-sans">PWR</span>
+                      </div>
+                      <div className="flex flex-col items-center justify-center gap-0.5 border-l border-white-5">
+                        <span className="text-emerald-400 font-mono">{char.defense}</span>
+                        <span className="text-[7px] text-zinc-500 uppercase font-sans">DEF</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Badges de sélection */}
-                  <div className="absolute top-4 right-4 flex flex-col gap-1.5 items-end">
+                  <div className="absolute top-2.5 right-2.5 flex flex-col gap-1 items-end">
                     {isSelectedLocal && (
-                      <div className="bg-pink-600 border border-pink-400 text-white font-bold text-9px uppercase px-2 py-0.5 rounded-full shadow-md">
+                      <div className="bg-pink-600 border border-pink-400 text-white font-bold text-[8px] uppercase px-2 py-0.5 rounded-full shadow-md">
                         Moi {localReady ? '✓ READY' : ''}
                       </div>
                     )}
                     {isSelectedOpponent && (
-                      <div className="bg-cyan-600 border border-cyan-400 text-white font-bold text-9px uppercase px-2 py-0.5 rounded-full shadow-md">
+                      <div className="bg-cyan-600 border border-cyan-400 text-white font-bold text-[8px] uppercase px-2 py-0.5 rounded-full shadow-md">
                         Adversaire {opponentReady ? '✓ READY' : ''}
                       </div>
                     )}

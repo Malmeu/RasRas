@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { ArrowLeft, Swords, Shield, Zap, Heart } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { soundManager } from '../game/SoundManager';
 
 export interface Character {
@@ -135,7 +135,7 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
       </div>
 
       {/* Grille des cartes personnages */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl w-full relative z-10 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl w-full relative z-10 mb-6 px-2">
         {CHARACTERS.map((char) => {
           const isSelectedByP1 = p1Selection?.id === char.id;
           const isDisabled = p1Selection !== null && isSelectedByP1 && gameMode === 'versus';
@@ -145,15 +145,15 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
               key={char.id}
               onClick={() => !isDisabled && selectCharacter(char)}
               onMouseEnter={playHoverSound}
-              className={`group cursor-pointer rounded-3xl p-6 border backdrop-blur-md transition-all duration-300 transform flex flex-col justify-between h-p450 relative overflow-hidden ${isSelectedByP1
-                  ? 'bg-pink-950-20 border-pink-500 scale-[1.03]'
+              className={`group cursor-pointer rounded-2xl p-4 border backdrop-blur-md transition-all duration-300 transform flex flex-col justify-between relative overflow-hidden ${isSelectedByP1
+                  ? 'bg-pink-950-20 border-pink-500 scale-[1.02]'
                   : isDisabled
                     ? 'opacity-40 cursor-not-allowed border-white-5 bg-black-20'
                     : 'bg-slate-950-50 border-white-10 hover:border-pink-500-50'
                 }`}
               style={isSelectedByP1 ? {
-                transform: 'scale(1.03)',
-                boxShadow: '0 0 30px rgba(219,39,119,0.3)'
+                transform: 'scale(1.02)',
+                boxShadow: '0 0 20px rgba(219,39,119,0.25)'
               } : {}}
             >
               {/* Effet visuel au survol */}
@@ -164,93 +164,62 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
                 }}
               />
 
-              {/* Tête de combattant en CSS dans la carte */}
-              <div className="flex justify-center items-center py-6 relative">
-                {/* Représentation visuelle du personnage en CSS */}
+              {/* Tête de combattant en CSS réduite dans la carte */}
+              <div className="flex justify-center items-center py-3 relative">
                 <div
-                  className="w-24 h-24 rounded-full border-3 border-zinc-950 relative transition-transform duration-300 group-hover:scale-110 flex items-center justify-center"
-                  style={{ backgroundColor: char.colorHex, boxShadow: '0 0 25px rgba(0,0,0,0.3)' }}
+                  className="w-16 h-16 rounded-full border-2 border-zinc-950 relative transition-transform duration-300 group-hover:scale-105 flex items-center justify-center"
+                  style={{ backgroundColor: char.colorHex, boxShadow: '0 0 15px rgba(0,0,0,0.3)' }}
                 >
                   {/* Yeux */}
-                  <div className="absolute top-[35%] left-[20%] w-5 h-5 rounded-full bg-white border border-black flex items-center justify-center">
-                    <div className="w-2 h-2 rounded-full bg-zinc-950 translate-x-2px translate-y-1px" />
+                  <div className="absolute top-[35%] left-[20%] w-3.5 h-3.5 rounded-full bg-white border border-black flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-zinc-950 translate-x-1px translate-y-1px" />
                   </div>
-                  <div className="absolute top-[35%] right-[20%] w-5 h-5 rounded-full bg-white border border-black flex items-center justify-center">
-                    <div className="w-2 h-2 rounded-full bg-zinc-950 translate-x-2px translate-y-1px" />
+                  <div className="absolute top-[35%] right-[20%] w-3.5 h-3.5 rounded-full bg-white border border-black flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-zinc-950 translate-x-1px translate-y-1px" />
                   </div>
 
                   {/* Gants de boxe */}
                   <div
-                    className="absolute bottom-[-5px] left-[-15px] w-8 h-8 rounded-full border-2 border-zinc-950 shadow-md animate-bounce-subtle"
+                    className="absolute bottom-[-3px] left-[-8px] w-5.5 h-5.5 rounded-full border-2 border-zinc-950 shadow-md"
                     style={{ backgroundColor: char.gloveColorHex }}
                   />
                   <div
-                    className="absolute bottom-[-5px] right-[-15px] w-8 h-8 rounded-full border-2 border-zinc-950 shadow-md animate-bounce-subtle"
-                    style={{ backgroundColor: char.gloveColorHex, animationDelay: '0.2s' }}
+                    className="absolute bottom-[-3px] right-[-8px] w-5.5 h-5.5 rounded-full border-2 border-zinc-950 shadow-md"
+                    style={{ backgroundColor: char.gloveColorHex }}
                   />
                 </div>
               </div>
 
-              {/* Contenu textuel */}
-              <div>
-                <h3 className="text-xl font-black uppercase text-white mb-2 tracking-tight group-hover:text-pink-400 transition-colors duration-200">
+              {/* Contenu textuel et statistiques en ligne ultra compactes */}
+              <div className="flex flex-col gap-3">
+                <h3 className="text-sm font-black uppercase text-center text-white tracking-tight group-hover:text-pink-400 transition-colors duration-200">
                   {char.name}
                 </h3>
-                <p className="text-xs text-zinc-400 leading-relaxed mb-4" style={{ minHeight: '50px' }}>
-                  {char.description}
-                </p>
 
-                {/* Statistiques barres */}
-                <div className="flex flex-col gap-2-5 bg-black-30 p-4 rounded-2xl border border-white-5">
-                  {/* Sante */}
-                  <div className="flex flex-col gap-1">
-                    <div className="flex justify-between text-10px uppercase font-bold text-zinc-400">
-                      <span className="flex items-center gap-1"><Heart size={10} className="text-red-500" /> Points de Vie</span>
-                      <span className="text-white font-mono">{char.maxHp} HP</span>
-                    </div>
-                    <div className="w-full h-1-5 bg-zinc-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-red-500" style={{ width: `${(char.maxHp / 120) * 100}%` }} />
-                    </div>
+                {/* Statistiques en ligne */}
+                <div className="grid grid-cols-4 gap-1 bg-black-30 p-2 rounded-xl border border-white-5 text-[9px] font-bold text-center text-zinc-300 font-mono">
+                  <div className="flex flex-col items-center justify-center gap-0.5">
+                    <span className="text-red-500 font-mono">{char.maxHp}</span>
+                    <span className="text-[7px] text-zinc-500 uppercase font-sans">HP</span>
                   </div>
-
-                  {/* Vitesse */}
-                  <div className="flex flex-col gap-1">
-                    <div className="flex justify-between text-10px uppercase font-bold text-zinc-400">
-                      <span className="flex items-center gap-1"><Zap size={10} className="text-cyan-400" /> Vitesse</span>
-                      <span className="text-white font-mono">{char.speed.toFixed(1)}</span>
-                    </div>
-                    <div className="w-full h-1-5 bg-zinc-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-cyan-400" style={{ width: `${(char.speed / 6) * 100}%` }} />
-                    </div>
+                  <div className="flex flex-col items-center justify-center gap-0.5 border-l border-white-5">
+                    <span className="text-cyan-400 font-mono">{char.speed.toFixed(1)}</span>
+                    <span className="text-[7px] text-zinc-500 uppercase font-sans">SPD</span>
                   </div>
-
-                  {/* Puissance */}
-                  <div className="flex flex-col gap-1">
-                    <div className="flex justify-between text-10px uppercase font-bold text-zinc-400">
-                      <span className="flex items-center gap-1"><Swords size={10} className="text-orange-500" /> Puissance</span>
-                      <span className="text-white font-mono">{char.power}</span>
-                    </div>
-                    <div className="w-full h-1-5 bg-zinc-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-orange-500" style={{ width: `${(char.power / 10) * 100}%` }} />
-                    </div>
+                  <div className="flex flex-col items-center justify-center gap-0.5 border-l border-white-5">
+                    <span className="text-orange-500 font-mono">{char.power}</span>
+                    <span className="text-[7px] text-zinc-500 uppercase font-sans">PWR</span>
                   </div>
-
-                  {/* Defense */}
-                  <div className="flex flex-col gap-1">
-                    <div className="flex justify-between text-10px uppercase font-bold text-zinc-400">
-                      <span className="flex items-center gap-1"><Shield size={10} className="text-emerald-400" /> Défense</span>
-                      <span className="text-white font-mono">{char.defense}</span>
-                    </div>
-                    <div className="w-full h-1-5 bg-zinc-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-emerald-400" style={{ width: `${(char.defense / 5) * 100}%` }} />
-                    </div>
+                  <div className="flex flex-col items-center justify-center gap-0.5 border-l border-white-5">
+                    <span className="text-emerald-400 font-mono">{char.defense}</span>
+                    <span className="text-[7px] text-zinc-500 uppercase font-sans">DEF</span>
                   </div>
                 </div>
               </div>
 
               {/* Étiquette d'état de sélection */}
               {isSelectedByP1 && (
-                <div className="absolute top-4 right-4 bg-pink-600 border border-pink-400 text-white font-bold text-10px uppercase px-2-5 py-1 rounded-full shadow-md">
+                <div className="absolute top-2.5 right-2.5 bg-pink-600 border border-pink-400 text-white font-bold text-[8px] uppercase px-2 py-0.5 rounded-full shadow-md">
                   Joueur 1
                 </div>
               )}

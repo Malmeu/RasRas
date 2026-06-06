@@ -440,9 +440,8 @@ button:hover {
   user-select: none;
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  padding: 1.5rem;
-  padding-bottom: 2rem;
+  align-items: center; /* Centrer verticalement au milieu de l'arène */
+  padding: 1.5rem 1rem;
   z-index: 100; /* Assure que c'est bien au-dessus de PixiJS (z-index 1) et de la pause (z-index 40) */
   touch-action: none;
 }
@@ -494,8 +493,7 @@ button:hover {
   pointer-events: auto;
   display: flex;
   gap: 0.75rem;
-  align-items: flex-end;
-  padding-bottom: 0.25rem;
+  align-items: center; /* Centrer verticalement au milieu de l'arène */
   margin-right: 0.5rem;
   opacity: 0.75;
   transition: opacity 0.2s ease;
