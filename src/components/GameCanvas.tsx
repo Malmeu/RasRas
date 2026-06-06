@@ -110,6 +110,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const ringCenter = { x: width / 2, y: height / 2 + 10 };
 
     async function initPixi() {
+      console.log('[GameCanvas] initPixi démarré. gameMode:', gameMode, 'socket connecté:', socket?.connected, 'socket ID:', socket?.id, 'onlineRole:', onlineRole, 'roomCode:', roomCode);
       try {
         // 1. Initialiser PixiJS App (asynchrone en v8)
         app = new Application();
@@ -260,6 +261,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       } | null = null;
 
       if (gameMode === 'online' && socket) {
+        console.log('[GameCanvas] Enregistrement des listeners de combat en ligne. Rôle:', onlineRole, 'Salon:', roomCode);
         socket.on('opponent_fighter_sync', (data: any) => {
           opponentTarget = data;
         });
@@ -1259,7 +1261,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         particles.destroy();
       }
     };
-  }, [gameMode, difficulty, player1Character, player2Character]);
+  }, [gameMode, difficulty, player1Character, player2Character, socket, onlineRole, roomCode]);
 
   if (errorMsg) {
     return (
