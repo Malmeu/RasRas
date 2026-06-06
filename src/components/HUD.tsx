@@ -87,7 +87,7 @@ export const HUD: React.FC<HUDProps> = ({
   const p2RagePercent = (p2Rage / 100) * 100;
 
   return (
-    <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-6 select-none font-sans z-50" style={{ zIndex: 9999 }}>
+    <div className="absolute inset-0 pointer-events-none flex flex-col justify-between px-6 pb-6 select-none font-sans z-50" style={{ zIndex: 9999, paddingTop: '0.5rem' }}>
       
       {/* Barre supérieure : Vie, Rage et Timer */}
       <div className="flex justify-between items-center w-full relative z-20">

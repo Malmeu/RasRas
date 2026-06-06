@@ -1035,23 +1035,31 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       g.fill({ color });
       g.stroke({ width: 1.5, color: 0x111111 });
 
-      // 3. Dessiner les yeux blancs
-      g.circle(-4, -10, 3.5);
+      // 3. Calculer l'orientation du regard
+      let eyeOffset = 0;
+      if (x < leftLimit) {
+        eyeOffset = 2.2; // regarde vers la droite
+      } else if (x > rightLimit) {
+        eyeOffset = -2.2; // regarde vers la gauche
+      }
+
+      // 4. Dessiner les yeux blancs décalés
+      g.circle(-4 + eyeOffset, -10, 3.5);
       g.fill({ color: 0xffffff });
       g.stroke({ width: 1, color: 0x111111 });
 
-      g.circle(4, -10, 3.5);
+      g.circle(4 + eyeOffset, -10, 3.5);
       g.fill({ color: 0xffffff });
       g.stroke({ width: 1, color: 0x111111 });
 
-      // 4. Dessiner les pupilles noires
-      g.circle(-4, -9, 1.2);
+      // 5. Dessiner les pupilles noires
+      g.circle(-4 + eyeOffset * 1.3, -9, 1.2);
       g.fill({ color: 0x111111 });
 
-      g.circle(4, -9, 1.2);
+      g.circle(4 + eyeOffset * 1.3, -9, 1.2);
       g.fill({ color: 0x111111 });
 
-      // 5. Petit bandeau de supporter (50% de chance)
+      // 6. Petit bandeau de supporter (50% de chance)
       if (Math.random() < 0.5) {
         g.rect(-11, -15, 22, 3);
         g.fill({ color: 0xff3366 });
