@@ -1,11 +1,11 @@
 /**
  * MainMenu.tsx
  * Composant de menu d'accueil dynamique pour le jeu RasRas.
- * Propose la sélection de mode (Solo/Versus), la difficulté, et présente les contrôles du jeu.
+ * Propose la sélection de mode (Solo/Versus/En ligne) et la difficulté dans un design épuré orienté mobile.
  */
 
 import React from 'react';
-import { Swords, User, Users, Shield, Zap, Sparkles, Globe } from 'lucide-react';
+import { Swords, User, Users, Globe, HelpCircle } from 'lucide-react';
 import { soundManager } from '../game/SoundManager';
 
 interface MainMenuProps {
@@ -15,6 +15,7 @@ interface MainMenuProps {
 export const MainMenu: React.FC<MainMenuProps> = ({ onStartGame }) => {
   const [mode, setMode] = React.useState<'solo' | 'versus' | 'online'>('solo');
   const [difficulty, setDifficulty] = React.useState<'easy' | 'normal' | 'hard'>('normal');
+  const [showControls, setShowControls] = React.useState(false);
 
   const handleStart = () => {
     soundManager.init(); // Initialiser l'audio sur clic
@@ -28,81 +29,78 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStartGame }) => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen text-white px-4 relative overflow-hidden bg-slate-950" style={{ backgroundImage: 'radial-gradient(circle at top, var(--bg-purple-950) 0%, var(--bg-slate-950) 100%)' }}>
+      
       {/* Grille de fond animée légère en CSS */}
       <div 
         className="absolute inset-0 pointer-events-none" 
         style={{ 
-          backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px)',
+          backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.01) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.01) 1px, transparent 1px)',
           backgroundSize: '40px 40px' 
         }} 
       />
 
-      {/* Titre Néon animé */}
-      <div className="text-center mb-8 relative z-10 animate-fade-in">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-pink-500-20 bg-pink-500-10 text-pink-400 text-xs font-semibold uppercase tracking-wider mb-4 animate-pulse">
-          <Sparkles size={12} /> Jeu de combat de ring <Sparkles size={12} />
-        </div>
+      {/* Titre Néon */}
+      <div className="text-center mb-6 relative z-10 animate-fade-in flex flex-col items-center">
         <h1 
-          className="text-7xl font-black uppercase tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 animate-bounce-subtle"
-          style={{ filter: 'drop-shadow(0 0 35px rgba(239,68,68,0.5))', WebkitTextFillColor: 'transparent', WebkitBackgroundClip: 'text' }}
+          className="text-6xl md:text-7xl font-black uppercase tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 animate-bounce-subtle"
+          style={{ filter: 'drop-shadow(0 0 25px rgba(239,68,68,0.5))', WebkitTextFillColor: 'transparent', WebkitBackgroundClip: 'text' }}
         >
           RasRas
         </h1>
-        <p className="text-zinc-400 text-lg font-medium tracking-wide mt-2 italic">
-          " Tête à Tête "
+        <p className="text-zinc-500 text-xs font-bold tracking-widest uppercase mt-1">
+          L'arène des combattants
         </p>
       </div>
 
-      {/* Conteneur principal Glassmorphic */}
-      <div className="w-full max-w-xl p-8 rounded-3xl bg-slate-950-60 border border-white-10 backdrop-blur-xl shadow-box-menu relative z-10 flex flex-col gap-6">
+      {/* Menu Box épurée et compacte (idéale pour mobile paysage) */}
+      <div className="w-full max-w-md p-6 rounded-3xl bg-slate-950-60 border border-white-10 backdrop-blur-xl shadow-box-menu relative z-10 flex flex-col gap-4">
         
         {/* Choix du mode */}
         <div className="flex flex-col gap-2">
-          <label className="text-xs font-bold uppercase tracking-wider text-pink-400">Mode de Jeu</label>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2">
             <button
               onClick={() => { setMode('solo'); playHoverSound(); }}
-              className={`flex flex-col items-center justify-center gap-2 py-3 px-3 rounded-2xl border transition-all duration-300 font-bold uppercase text-xs tracking-wider ${
+              className={`flex flex-col items-center justify-center gap-1.5 py-4 px-2 rounded-2xl border transition-all duration-300 font-black uppercase text-[10px] tracking-wider ${
                 mode === 'solo'
                   ? 'border-pink-500 text-white'
                   : 'bg-white-5 border-white-10 text-zinc-400'
               }`}
               style={mode === 'solo' ? {
-                background: 'linear-gradient(to right, var(--pink-600), var(--red-600))',
-                boxShadow: '0 0 20px rgba(219,39,119,0.4)'
+                background: 'linear-gradient(to bottom right, var(--pink-600), var(--red-600))',
+                boxShadow: '0 0 15px rgba(219,39,119,0.3)'
               } : {}}
             >
-              <User size={16} />
-              1 J (VS IA)
+              <User size={18} />
+              Solo (IA)
             </button>
             <button
               onClick={() => { setMode('versus'); playHoverSound(); }}
-              className={`flex flex-col items-center justify-center gap-2 py-3 px-3 rounded-2xl border transition-all duration-300 font-bold uppercase text-xs tracking-wider ${
+              className={`flex flex-col items-center justify-center gap-1.5 py-4 px-2 rounded-2xl border transition-all duration-300 font-black uppercase text-[10px] tracking-wider ${
                 mode === 'versus'
                   ? 'border-pink-500 text-white'
                   : 'bg-white-5 border-white-10 text-zinc-400'
               }`}
               style={mode === 'versus' ? {
-                background: 'linear-gradient(to right, var(--pink-600), var(--red-600))',
-                boxShadow: '0 0 20px rgba(219,39,119,0.4)'
+                background: 'linear-gradient(to bottom right, var(--pink-600), var(--red-600))',
+                boxShadow: '0 0 15px rgba(219,39,119,0.3)'
               } : {}}
             >
-              <Users size={16} />
-              2 J (Local)
+              <Users size={18} />
+              Versus
             </button>
             <button
               onClick={() => { setMode('online'); playHoverSound(); }}
-              className={`flex flex-col items-center justify-center gap-2 py-3 px-3 rounded-2xl border transition-all duration-300 font-bold uppercase text-xs tracking-wider ${
+              className={`flex flex-col items-center justify-center gap-1.5 py-4 px-2 rounded-2xl border transition-all duration-300 font-black uppercase text-[10px] tracking-wider ${
                 mode === 'online'
                   ? 'border-pink-500 text-white'
                   : 'bg-white-5 border-white-10 text-zinc-400'
               }`}
               style={mode === 'online' ? {
-                background: 'linear-gradient(to right, var(--pink-600), var(--red-600))',
-                boxShadow: '0 0 20px rgba(219,39,119,0.4)'
+                background: 'linear-gradient(to bottom right, var(--pink-600), var(--red-600))',
+                boxShadow: '0 0 15px rgba(219,39,119,0.3)'
               } : {}}
             >
-              <Globe size={16} />
+              <Globe size={18} />
               En Ligne
             </button>
           </div>
@@ -110,74 +108,66 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStartGame }) => {
 
         {/* Difficulté (si solo) */}
         {mode === 'solo' && (
-          <div className="flex flex-col gap-2 animate-slide-down">
-            <label className="text-xs font-bold uppercase tracking-wider text-pink-400">Difficulté de l'IA</label>
+          <div className="flex flex-col gap-1.5 animate-scale-up">
             <div className="grid grid-cols-3 gap-2">
               {(['easy', 'normal', 'hard'] as const).map((diff) => (
                 <button
                   key={diff}
                   onClick={() => { setDifficulty(diff); playHoverSound(); }}
-                  className={`py-2 px-4 rounded-xl border transition-all duration-200 font-bold uppercase text-xs tracking-wider ${
+                  className={`py-2 px-1.5 rounded-xl border transition-all duration-200 font-bold uppercase text-[9px] tracking-wider ${
                     difficulty === diff
                       ? 'bg-red-500-20 border-red-500 text-red-400'
                       : 'bg-white-5 border-white-5 text-zinc-400'
                   }`}
-                  style={difficulty === diff ? { boxShadow: '0 0 12px rgba(239,68,68,0.2)' } : {}}
                 >
-                  {diff === 'easy' ? 'Facile' : diff === 'normal' ? 'Normal' : 'Difficile'}
+                  {diff === 'easy' ? 'IA Facile' : diff === 'normal' ? 'IA Normal' : 'IA Difficile'}
                 </button>
               ))}
             </div>
           </div>
         )}
 
-        {/* Panneau de Contrôles */}
-        <div className="p-5 rounded-2xl bg-white-5 border border-white-5 flex flex-col gap-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-pink-400 border-b border-white-5 pb-2">Contrôles du Clavier</h3>
-          <div className="grid grid-cols-2 gap-6 text-xs text-zinc-300">
-            <div>
-              <p className="font-bold text-white mb-2" style={{ color: 'rgba(236,72,153,0.8)' }}>JOUEUR 1</p>
-              <ul className="flex flex-col gap-1-5 list-none p-0 m-0">
-                <li><strong className="text-white bg-white-10 px-1-5 py-1 rounded">ZQSD</strong> / <strong className="text-white bg-white-10 px-1-5 py-1 rounded">WASD</strong> : Déplacement</li>
-                <li style={{ marginTop: '5px' }}><strong className="text-white bg-white-10 px-1-5 py-1 rounded">F</strong> ou <strong className="text-white bg-white-10 px-1-5 py-1 rounded">Espace</strong> : Frapper</li>
-                <li style={{ marginTop: '5px' }}><strong className="text-white bg-white-10 px-1-5 py-1 rounded">G</strong> ou <strong className="text-white bg-white-10 px-1-5 py-1 rounded">Shift L</strong> : Dash (Esquive)</li>
-                <li style={{ marginTop: '5px' }}><strong className="text-white bg-white-10 px-1-5 py-1 rounded">C</strong> ou <strong className="text-white bg-white-10 px-1-5 py-1 rounded">E</strong> : Parade / Blocage</li>
-              </ul>
-            </div>
-            {mode === 'versus' ? (
-              <div>
-                <p className="font-bold text-white mb-2" style={{ color: 'rgba(236,72,153,0.8)' }}>JOUEUR 2</p>
-                <ul className="flex flex-col gap-1-5 list-none p-0 m-0">
-                  <li><strong className="text-white bg-white-10 px-1-5 py-1 rounded">Flèches</strong> : Déplacement</li>
-                  <li style={{ marginTop: '5px' }}><strong className="text-white bg-white-10 px-1-5 py-1 rounded">K</strong> / <strong className="text-white bg-white-10 px-1-5 py-1 rounded">Num 1</strong> : Frapper</li>
-                  <li style={{ marginTop: '5px' }}><strong className="text-white bg-white-10 px-1-5 py-1 rounded">L</strong> / <strong className="text-white bg-white-10 px-1-5 py-1 rounded">Num 2</strong> : Dash (Esquive)</li>
-                  <li style={{ marginTop: '5px' }}><strong className="text-white bg-white-10 px-1-5 py-1 rounded">I</strong> / <strong className="text-white bg-white-10 px-1-5 py-1 rounded">Num 3</strong> : Parade</li>
-                </ul>
-              </div>
-            ) : (
-              <div className="flex flex-col justify-center items-center text-center opacity-70">
-                <Shield size={24} style={{ color: 'rgba(236,72,153,0.8)', marginBottom: '4px' }} />
-                <Zap size={24} style={{ color: 'rgba(239,68,68,0.8)', marginBottom: '8px' }} />
-                <p className="italic text-zinc-400">Rage à 100% ?<br/>Appuyez sur <strong className="text-white bg-white-10 px-1 py-1 rounded">Frappe + Parade</strong> pour le coup spécial !</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Bouton Lancer */}
+        {/* Bouton Combattre */}
         <button
           onClick={handleStart}
-          className="mt-2 w-full py-5 px-6 rounded-2xl text-white font-black text-lg uppercase tracking-widest transition-all duration-300 hover-scale-102 active-scale-98 flex items-center justify-center gap-3 border border-white-10"
+          className="w-full py-4.5 rounded-2xl text-white font-black text-base uppercase tracking-widest transition-all duration-300 hover-scale-102 active-scale-98 flex items-center justify-center gap-2 border border-white-10"
           style={{
-            background: 'linear-gradient(to right, var(--pink-500), var(--red-500), var(--yellow-500))',
-            boxShadow: '0 10px 30px rgba(239,68,68,0.4)'
+            background: 'linear-gradient(to right, var(--pink-500), var(--red-500))',
+            boxShadow: '0 8px 24px rgba(239,68,68,0.3)'
           }}
         >
-          <Swords size={22} className="animate-spin-slow" />
-          Monter sur le ring
+          <Swords size={18} />
+          Combattre
         </button>
+
+        {/* Petit bouton d'aide discret */}
+        <div className="flex justify-center mt-1">
+          <button 
+            onClick={() => setShowControls(!showControls)}
+            className="text-[10px] text-zinc-500 hover:text-zinc-300 flex items-center gap-1 uppercase tracking-widest font-bold"
+          >
+            <HelpCircle size={12} />
+            {showControls ? "Masquer les commandes" : "Commandes clavier"}
+          </button>
+        </div>
+
+        {/* Bloc d'aide dépliant */}
+        {showControls && (
+          <div className="p-3.5 rounded-xl bg-white-5 border border-white-5 text-[10px] text-zinc-400 flex flex-col gap-2 animate-scale-up">
+            <p className="font-bold text-white uppercase tracking-wider">Configuration Clavier :</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <span className="text-pink-400 font-bold">J1 :</span> ZQSD (Bouger) | Espace (Frapper) | Shift (Dash) | C (Parer)
+              </div>
+              <div>
+                <span className="text-cyan-400 font-bold">J2 :</span> Flèches (Bouger) | K (Frapper) | L (Dash) | I (Parer)
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
   );
 };
+

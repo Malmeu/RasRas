@@ -335,6 +335,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       let cheerTimer = Math.random() * 8000 + 4000;
       let itemSpawnTimer = Math.random() * 10000 + 15000;
       let bubbleSpawnTimer = Math.random() * 2000 + 2000;
+      let networkSendTimer = 0;
 
       app.ticker.add((ticker) => {
         const state = stateRef.current;
@@ -422,8 +423,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         if (gameMode === 'online' && opponentTarget) {
           const opponent = onlineRole === 'host' ? p2 : p1;
           if (opponent) {
-            opponent.x += ((opponentTarget as any).x - opponent.x) * 0.35 * dt;
-            opponent.y += ((opponentTarget as any).y - opponent.y) * 0.35 * dt;
             opponent.vx = (opponentTarget as any).vx;
             opponent.vy = (opponentTarget as any).vy;
             opponent.rotation = (opponentTarget as any).rotation;
@@ -442,19 +441,29 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           }
         }
 
-        // --- PHYSIQUE & COLLISION DU RING ---
-        // En ligne, on ne fait la physique locale que pour son propre personnage
+        // --- PHYSIQUE & COLLISION DU RING & UPDATE DE TOUS LES COMBATTANTS ---
+        // On met à jour les deux combattants localement à chaque tick pour assurer la mise à jour fluide des animations
+        p1!.update(dt, p2!.x, p2!.y);
+        p2!.update(dt, p1!.x, p1!.y);
+
         if (gameMode === 'online') {
+          // Pour l'adversaire réseau, on écrase son déplacement physique simulé en appliquant
+          // l'interpolation (lerp) vers la position réseau réelle reçue.
+          const opponent = onlineRole === 'host' ? p2 : p1;
+          if (opponent && opponentTarget) {
+            opponent.x += ((opponentTarget as any).x - opponent.x) * 0.35 * dt;
+            opponent.y += ((opponentTarget as any).y - opponent.y) * 0.35 * dt;
+            opponent.container.x = opponent.x;
+            opponent.container.y = opponent.y;
+          }
+
+          // keepInRing uniquement pour son propre combattant en ligne
           if (onlineRole === 'host') {
-            p1!.update(dt, p2!.x, p2!.y);
             keepInRing(p1!);
           } else {
-            p2!.update(dt, p1!.x, p1!.y);
             keepInRing(p2!);
           }
         } else {
-          p1!.update(dt, p2!.x, p2!.y);
-          p2!.update(dt, p1!.x, p1!.y);
           keepInRing(p1!);
           keepInRing(p2!);
         }
@@ -595,25 +604,29 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           }
         }
 
-        // --- ÉMISSION DES DONNÉES DU JOUEUR LOCAL ---
+        // --- ÉMISSION DES DONNÉES DU JOUEUR LOCAL (limité à ~30Hz pour éviter la congestion réseau) ---
         if (gameMode === 'online' && socket) {
-          const localFighter = onlineRole === 'host' ? p1 : p2;
-          if (localFighter) {
-            socket.emit('sync_fighter', {
-              roomCode,
-              fighterData: {
-                x: localFighter.x,
-                y: localFighter.y,
-                vx: localFighter.vx,
-                vy: localFighter.vy,
-                rotation: localFighter.rotation,
-                state: localFighter.state,
-                hp: localFighter.hp,
-                rage: localFighter.rage,
-                weapon: localFighter.equippedWeapon,
-                weaponUses: localFighter.weaponUses
-              }
-            });
+          networkSendTimer += ticker.elapsedMS;
+          if (networkSendTimer >= 33) {
+            networkSendTimer = 0;
+            const localFighter = onlineRole === 'host' ? p1 : p2;
+            if (localFighter) {
+              socket.emit('sync_fighter', {
+                roomCode,
+                fighterData: {
+                  x: localFighter.x,
+                  y: localFighter.y,
+                  vx: localFighter.vx,
+                  vy: localFighter.vy,
+                  rotation: localFighter.rotation,
+                  state: localFighter.state,
+                  hp: localFighter.hp,
+                  rage: localFighter.rage,
+                  weapon: localFighter.equippedWeapon,
+                  weaponUses: localFighter.weaponUses
+                }
+              });
+            }
           }
         }
 
