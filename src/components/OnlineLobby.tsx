@@ -121,12 +121,10 @@ export const OnlineLobby: React.FC<OnlineLobbyProps> = ({ onBack, onGameStart })
   };
 
   useEffect(() => {
-    // Nettoyage lors du démontage du composant
-    return () => {
-      if (socket) {
-        socket.disconnect();
-      }
-    };
+    // Le socket n'est pas déconnecté ici car son cycle de vie est transféré
+    // à l'application parente App.tsx (pour le combat).
+    // La déconnexion sera gérée lors du retour au menu.
+    return () => {};
   }, [socket]);
 
   const handleUsernameSubmit = (e: React.FormEvent) => {

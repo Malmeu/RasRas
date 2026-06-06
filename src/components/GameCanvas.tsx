@@ -1288,6 +1288,17 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       if (particles) {
         particles.destroy();
       }
+
+      // Désenregistrer les écouteurs de socket pour éviter les conflits de closures obsolètes
+      if (socket) {
+        socket.off('opponent_fighter_sync');
+        socket.off('opponent_hit');
+        socket.off('item_spawned');
+        socket.off('opponent_item_picked');
+        socket.off('game_time_sync');
+        socket.off('match_over');
+        socket.off('opponent_left');
+      }
     };
   }, [gameMode, difficulty, player1Character, player2Character, socket, onlineRole, roomCode]);
 
