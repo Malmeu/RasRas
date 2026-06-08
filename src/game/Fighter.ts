@@ -249,30 +249,61 @@ export class Fighter {
   }
 
   /**
-   * Oriente les pupilles dynamiquement vers l'adversaire
+   * Oriente les pupilles dynamiquement vers l'adversaire et gère les expressions faciales
    */
   private animateEyes(opponentX: number, opponentY: number) {
     const dx = opponentX - this.x;
     const dy = opponentY - this.y;
     const dist = Math.hypot(dx, dy);
 
-    if (dist > 0 && this.state !== 'ko') {
-      // Déplacement maximal des pupilles = 2.5 pixels
-      const lookX = (dx / dist) * 2.5;
-      const lookY = (dy / dist) * 2.5;
-
-      // Positionner les pupilles par rapport au centre de l'oeil
-      // En tenant compte de la rotation de la tête
-      this.pupilL.x = -10 + lookX;
-      this.pupilL.y = -8 + lookY;
-      this.pupilR.x = 10 + lookX;
-      this.pupilR.y = -8 + lookY;
-    } else if (this.state === 'ko') {
-      // Yeux en croix (K.O.)
+    // Expression faciale selon l'état du combattant
+    if (this.state === 'ko') {
+      // Yeux fermés de K.O.
+      this.eyeL.scale.y = 0.15;
+      this.eyeR.scale.y = 0.15;
+      this.pupilL.visible = false;
+      this.pupilR.visible = false;
+    } else if (this.hitStunTimer > 0 || this.state === 'stunned') {
+      // Yeux fermés de douleur à l'impact
+      this.eyeL.scale.y = 0.15;
+      this.eyeR.scale.y = 0.15;
+      this.pupilL.visible = false;
+      this.pupilR.visible = false;
+    } else if (this.state === 'blocking') {
+      // Yeux plissés de concentration
+      this.eyeL.scale.y = 0.55;
+      this.eyeR.scale.y = 0.55;
+      this.pupilL.visible = true;
+      this.pupilR.visible = true;
+      
+      // Centrer les pupilles
       this.pupilL.x = -10;
       this.pupilL.y = -8;
       this.pupilR.x = 10;
       this.pupilR.y = -8;
+    } else {
+      // Yeux grands ouverts normaux
+      this.eyeL.scale.y = 1.0;
+      this.eyeR.scale.y = 1.0;
+      this.pupilL.visible = true;
+      this.pupilR.visible = true;
+
+      if (dist > 0) {
+        // Déplacement maximal des pupilles = 2.5 pixels
+        const lookX = (dx / dist) * 2.5;
+        const lookY = (dy / dist) * 2.5;
+
+        // Positionner les pupilles par rapport au centre de l'oeil
+        this.pupilL.x = -10 + lookX;
+        this.pupilL.y = -8 + lookY;
+        this.pupilR.x = 10 + lookX;
+        this.pupilR.y = -8 + lookY;
+      } else {
+        this.pupilL.x = -10;
+        this.pupilL.y = -8;
+        this.pupilR.x = 10;
+        this.pupilR.y = -8;
+      }
     }
   }
 
@@ -408,7 +439,10 @@ export class Fighter {
       this.vx += (dx / magnitude) * finalSpeed * 0.11;
       this.vy += (dy / magnitude) * finalSpeed * 0.11;
 
-      this.state = this.state === 'blocking' ? 'blocking' : 'moving';
+      // Conserver l'état de frappe (punching) ou de parade (blocking) s'il est actif
+      if (this.state !== 'punching' && this.state !== 'blocking') {
+        this.state = 'moving';
+      }
     }
   }
 

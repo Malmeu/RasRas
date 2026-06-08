@@ -929,8 +929,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         if (dist > 180) {
           // Loin : poursuivre le joueur
           aiCurrentAction = 'chase';
-        } else if (dist < 50) {
-          // Trop près : attaquer ou esquiver/reculer
+        } else if (dist < 85) {
+          // À portée de coup ou trop près : attaquer, reculer ou parer
           const rand = Math.random();
           if (rand < 0.6) {
             ai.punch();
