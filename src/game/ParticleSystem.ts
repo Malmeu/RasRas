@@ -238,6 +238,37 @@ export class ParticleSystem {
   }
 
   /**
+   * Émet des particules de fumée colorée pour un fumigène
+   */
+  public emitFumigeneSmoke(x: number, y: number, color: number) {
+    const graphic = new Graphics();
+    // Dessiner un petit cercle de fumée flou/semi-transparent
+    graphic.circle(0, 0, 7 + Math.random() * 6);
+    graphic.fill({ color, alpha: 0.4 });
+
+    // Vitesse lente vers le haut avec un léger balancement horizontal
+    const vx = (Math.random() - 0.5) * 0.7;
+    const vy = -1.1 - Math.random() * 0.9;
+
+    const p: Particle = {
+      graphic,
+      x,
+      y,
+      vx,
+      vy,
+      alpha: 0.4,
+      scale: 1,
+      color,
+      life: 35 + Math.random() * 20,
+      maxLife: 55,
+      type: 'dust', // Utilise le type dust pour rétrécir à la fin
+    };
+
+    this.container.addChild(graphic);
+    this.particles.push(p);
+  }
+
+  /**
    * Nettoie toutes les particules à la fin
    */
   public destroy() {

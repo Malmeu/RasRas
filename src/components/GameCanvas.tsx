@@ -60,6 +60,8 @@ interface CrowdMember {
   body: Graphics;
   eyeL: Graphics;
   eyeR: Graphics;
+  flagSprite?: Sprite;
+  fumigeneColor?: number;
 }
 
 export const GameCanvas: React.FC<GameCanvasProps> = ({
@@ -102,6 +104,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     let itemContainer: Container | null = null;
     const droppedItems: DroppedItem[] = [];
     const crowdMembers: CrowdMember[] = [];
+    let flagTexture: any = null;
     const activeBubbles: { container: Container; timer: number; maxTime: number; supporterIndex: number; }[] = [];
 
     // Dimensions du canvas (dynamiques sur mobile plein écran)
@@ -176,7 +179,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       worldContainer.addChild(effectContainer);
       worldContainer.addChild(speechBubbleContainer);
 
-            // Créer les supporters autour du ring
+      // Charger la texture du drapeau d'Algérie
+      try {
+        flagTexture = await Assets.load('/assets/images/Flag_of_Algeria.svg.webp');
+      } catch (err) {
+        console.warn("Impossible de charger le drapeau d'Algérie :", err);
+      }
+
+      // Créer les supporters autour du ring
       const crowdColors = [0xef4444, 0x3b82f6, 0x10b981, 0xf59e0b, 0x8b5cf6, 0xec4899, 0x14b8a6, 0x6366f1];
       // Supporters du haut (positionnés au-dessus du ring)
       for (let x = 40; x <= width - 40; x += 40) {
@@ -205,6 +215,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         const py = y + (Math.random() - 0.5) * 8;
         const color = crowdColors[Math.floor(Math.random() * crowdColors.length)];
         crowdMembers.push(createCrowdMember(crowdContainer, px, py, color));
+      }
+
+      // Assigner des fumigènes (couleurs d'Algérie : vert, rouge, blanc) à 4 supporters aléatoires
+      const numFumigenes = 4;
+      const fumiColors = [0x10b981, 0xef4444, 0xffffff, 0x10b981];
+      for (let i = 0; i < numFumigenes; i++) {
+        if (crowdMembers.length > 0) {
+          const idx = Math.floor(Math.random() * crowdMembers.length);
+          crowdMembers[idx].fumigeneColor = fumiColors[i % fumiColors.length];
+        }
       }
 
       // 3. Charger et dessiner l'image de fond du ring carré
@@ -520,6 +540,18 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           const stretch = 1.0 - (bounce < 0 ? bounce * 0.03 : 0);
           const squash = 1.0 + (bounce < 0 ? bounce * 0.03 : 0);
           m.container.scale.set(squash, stretch);
+
+          // Animer le drapeau tenu par le supporter (flottement dans le vent)
+          if (m.flagSprite) {
+            const waveSpeed = excitement > 0 ? 0.022 : 0.008;
+            const waveAngle = excitement > 0 ? 0.45 : 0.22;
+            m.flagSprite.rotation = Math.sin(timeNow * waveSpeed + m.phase) * waveAngle;
+          }
+
+          // Émettre de la fumée colorée si ce supporter tient un fumigène
+          if (m.fumigeneColor && Math.random() < 0.12) {
+            particles?.emitFumigeneSmoke(m.x, m.y - 15, m.fumigeneColor);
+          }
         });
 
         // --- MISE A JOUR DES BULLES DE DIALOGUE ---
@@ -1067,6 +1099,25 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         g.fill({ color: 0xff3366 });
       }
 
+      // 7. Drapeau d'Algérie tenu par le supporter (20% de chance)
+      let flagSprite: Sprite | undefined = undefined;
+      if (flagTexture && Math.random() < 0.20) {
+        // Hampe du drapeau (bâton)
+        const pole = new Graphics();
+        pole.rect(-1, -22, 2, 22);
+        pole.fill({ color: 0x8b4513 });
+        g.addChild(pole);
+
+        // Drapeau lui-même
+        flagSprite = new Sprite(flagTexture);
+        flagSprite.anchor.set(0, 0); // Ancré en haut à gauche
+        flagSprite.x = 1;
+        flagSprite.y = -22;
+        flagSprite.width = 18;
+        flagSprite.height = 12;
+        g.addChild(flagSprite);
+      }
+
       return {
         container: g as any, // Graphics hérite de Container en PixiJS
         x,
@@ -1076,6 +1127,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         body: g,
         eyeL: g,
         eyeR: g,
+        flagSprite,
       };
     }
 

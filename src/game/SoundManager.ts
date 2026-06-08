@@ -25,7 +25,7 @@ class SoundManager {
     cheer: '/assets/sounds/cheer.mp3',
     countdown: '/assets/sounds/countdown.mp3',
     fight: '/assets/sounds/fight.mp3',
-    bgm: '/assets/sounds/battle_bgm.mp3',
+    bgm: '/assets/sounds/ambiance.mp3',
     final: '/assets/sounds/final.mp3',
   };
 
