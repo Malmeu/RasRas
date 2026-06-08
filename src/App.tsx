@@ -334,11 +334,11 @@ function App() {
               isMobile={showMobileControls}
             />
 
-            {/* Overlay d'effet KO "KIIIIW" de Street Fighter */}
+            {/* Overlay d'effet KO "Sedma kbira" de Street Fighter */}
             {liveData.isKO && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none animate-ko-flash-bg" style={{ zIndex: 900 }}>
                 <div className="animate-ko-bounce-text select-none">
-                  <h1 className="ko-text-kiw">KIIIIW</h1>
+                  <h1 className="ko-text-kiw">Sedma kbira</h1>
                 </div>
               </div>
             )}

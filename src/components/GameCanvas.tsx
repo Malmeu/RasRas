@@ -620,6 +620,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           }
           if (p2!.hp <= 0) {
             state.slowMoTimer = 2500;
+            soundManager.play('final', { pan: (p2!.x - ringCenter.x) / ringCenter.x });
           }
         }
         if (p2Hit) {
@@ -629,6 +630,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           }
           if (p1!.hp <= 0) {
             state.slowMoTimer = 2500;
+            soundManager.play('final', { pan: (p1!.x - ringCenter.x) / ringCenter.x });
           }
         }
 

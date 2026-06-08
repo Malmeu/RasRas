@@ -417,7 +417,7 @@ button:hover {
 
 .ko-text-kiw {
   font-family: var(--font-sans);
-  font-size: 7rem; /* Très imposant */
+  font-size: 4.2rem; /* Adapté pour Sedma kbira */
   font-weight: 900;
   font-style: italic;
   text-transform: uppercase;
