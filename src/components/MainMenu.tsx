@@ -28,21 +28,31 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStartGame }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen text-white px-4 relative overflow-hidden bg-slate-950 bg-cover bg-center" style={{ backgroundImage: 'linear-gradient(rgba(15, 23, 42, 0.55), rgba(15, 23, 42, 0.75)), url("/assets/images/main.jpeg")' }}>
+    <div className="flex items-center justify-center min-h-screen w-full bg-slate-950 text-white overflow-hidden">
       
-      {/* Grille de fond animée légère en CSS */}
       <div 
-        className="absolute inset-0 pointer-events-none" 
-        style={{ 
-          backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.01) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.01) 1px, transparent 1px)',
-          backgroundSize: '40px 40px' 
-        }} 
-      />
+        className="relative flex flex-col items-center justify-end pb-8 text-white px-4"
+        style={{
+          width: 'min(100vw, 100vh)',
+          height: 'min(100vw, 100vh)',
+          backgroundImage: 'url("/assets/images/main.jpeg")',
+          backgroundSize: '100% 100%',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
+        
+        {/* Grille de fond animée légère en CSS dans le conteneur carré */}
+        <div 
+          className="absolute inset-0 pointer-events-none" 
+          style={{ 
+            backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.01) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.01) 1px, transparent 1px)',
+            backgroundSize: '40px 40px' 
+          }} 
+        />
 
-      {/* Titre Néon supprimé car intégré dans la pochette main.jpeg */}
-
-      {/* Menu Box épurée et compacte (idéale pour mobile paysage) */}
-      <div className="w-full max-w-md p-6 rounded-3xl bg-slate-950-60 border border-white-10 backdrop-blur-xl shadow-box-menu relative z-10 flex flex-col gap-4">
+        {/* Menu Box épurée et compacte (idéale pour mobile paysage) */}
+        <div className="w-full max-w-sm p-5 rounded-3xl bg-slate-950-80 border border-white-10 backdrop-blur-xl shadow-box-menu relative z-10 flex flex-col gap-3">
         
         {/* Choix du mode */}
         <div className="flex flex-col gap-2">
@@ -157,6 +167,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStartGame }) => {
 
       </div>
     </div>
+  </div>
   );
 };
 

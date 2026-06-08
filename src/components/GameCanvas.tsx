@@ -60,7 +60,7 @@ interface CrowdMember {
   body: Graphics;
   eyeL: Graphics;
   eyeR: Graphics;
-  flagSprite?: Sprite;
+  flagContainer?: Container;
   fumigeneColor?: number;
 }
 
@@ -104,7 +104,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     let itemContainer: Container | null = null;
     const droppedItems: DroppedItem[] = [];
     const crowdMembers: CrowdMember[] = [];
-    let flagTexture: any = null;
     const activeBubbles: { container: Container; timer: number; maxTime: number; supporterIndex: number; }[] = [];
 
     // Dimensions du canvas (dynamiques sur mobile plein écran)
@@ -178,13 +177,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       worldContainer.addChild(fighterContainer);
       worldContainer.addChild(effectContainer);
       worldContainer.addChild(speechBubbleContainer);
-
-      // Charger la texture du drapeau d'Algérie
-      try {
-        flagTexture = await Assets.load('/assets/images/Flag_of_Algeria.svg.webp');
-      } catch (err) {
-        console.warn("Impossible de charger le drapeau d'Algérie :", err);
-      }
 
       // Créer les supporters autour du ring
       const crowdColors = [0xef4444, 0x3b82f6, 0x10b981, 0xf59e0b, 0x8b5cf6, 0xec4899, 0x14b8a6, 0x6366f1];
@@ -542,10 +534,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           m.container.scale.set(squash, stretch);
 
           // Animer le drapeau tenu par le supporter (flottement dans le vent)
-          if (m.flagSprite) {
+          if (m.flagContainer) {
             const waveSpeed = excitement > 0 ? 0.022 : 0.008;
             const waveAngle = excitement > 0 ? 0.45 : 0.22;
-            m.flagSprite.rotation = Math.sin(timeNow * waveSpeed + m.phase) * waveAngle;
+            m.flagContainer.rotation = Math.sin(timeNow * waveSpeed + m.phase) * waveAngle;
           }
 
           // Émettre de la fumée colorée si ce supporter tient un fumigène
@@ -1100,22 +1092,51 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       }
 
       // 7. Drapeau d'Algérie tenu par le supporter (20% de chance)
-      let flagSprite: Sprite | undefined = undefined;
-      if (flagTexture && Math.random() < 0.20) {
+      let flagContainer: Container | undefined = undefined;
+      if (Math.random() < 0.20) {
+        flagContainer = new Container();
+        g.addChild(flagContainer);
+
         // Hampe du drapeau (bâton)
         const pole = new Graphics();
         pole.rect(-1, -22, 2, 22);
         pole.fill({ color: 0x8b4513 });
-        g.addChild(pole);
+        flagContainer.addChild(pole);
 
-        // Drapeau lui-même
-        flagSprite = new Sprite(flagTexture);
-        flagSprite.anchor.set(0, 0); // Ancré en haut à gauche
-        flagSprite.x = 1;
-        flagSprite.y = -22;
-        flagSprite.width = 18;
-        flagSprite.height = 12;
-        g.addChild(flagSprite);
+        // Drapeau lui-même (dessin vectoriel d'Algérie)
+        const flag = new Graphics();
+        // Côté gauche : Vert
+        flag.rect(0, -22, 9, 12);
+        flag.fill({ color: 0x006633 });
+        // Côté droit : Blanc
+        flag.rect(9, -22, 9, 12);
+        flag.fill({ color: 0xffffff });
+        
+        // Croissant rouge au milieu (disque rouge masqué par un disque blanc un peu décalé)
+        flag.circle(9, -16, 3);
+        flag.fill({ color: 0xd21034 });
+        flag.circle(10.2, -16, 2.4);
+        flag.fill({ color: 0xffffff }); // Le fond blanc masque le rouge pour créer le croissant
+        
+        // Étoile rouge à 5 branches simplifiée
+        flag.moveTo(11, -17.5);
+        flag.lineTo(11.5, -16.2);
+        flag.lineTo(12.8, -16.2);
+        flag.lineTo(11.8, -15.4);
+        flag.lineTo(12.2, -14.1);
+        flag.lineTo(11, -14.9);
+        flag.lineTo(9.8, -14.1);
+        flag.lineTo(10.2, -15.4);
+        flag.lineTo(9.2, -16.2);
+        flag.lineTo(10.5, -16.2);
+        flag.closePath();
+        flag.fill({ color: 0xd21034 });
+
+        // Bordure fine
+        flag.rect(0, -22, 18, 12);
+        flag.stroke({ width: 0.5, color: 0x222222 });
+
+        flagContainer.addChild(flag);
       }
 
       return {
@@ -1127,7 +1148,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         body: g,
         eyeL: g,
         eyeR: g,
-        flagSprite,
+        flagContainer,
       };
     }
 

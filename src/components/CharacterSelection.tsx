@@ -135,212 +135,187 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
 
   // Titre selon la phase de sélection
   const getTitle = () => {
-    if (gameMode === 'solo') return 'Choisissez votre Combattant';
-    if (!p1Selection) return 'JOUEUR 1 : Choisissez votre Combattant';
-    if (!p2Selection) return 'JOUEUR 2 : Choisissez votre Combattant';
+    if (gameMode === 'solo') return 'Sélection du Combattant';
+    if (!p1Selection) return 'Joueur 1 : Choisissez !';
+    if (!p2Selection) return 'Joueur 2 : Choisissez !';
     return 'Prêts pour le Combat !';
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen text-white px-4 relative overflow-hidden bg-slate-950" style={{ backgroundImage: 'radial-gradient(circle at bottom, var(--bg-purple-950) 0%, var(--bg-slate-950) 100%)' }}>
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px)',
-          backgroundSize: '40px 40px'
-        }}
-      />
+    <div className="flex flex-col items-center justify-between min-h-screen text-white p-4 relative overflow-hidden bg-slate-950" style={{ backgroundImage: 'radial-gradient(circle at bottom, var(--bg-purple-950) 0%, var(--bg-slate-950) 100%)' }}>
+      {/* Grille de fond */}
+      <div className="absolute inset-0 pointer-events-none opacity-20" style={{ backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
 
-      {/* Bouton Retour */}
-      <button
-        onClick={onBack}
-        className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 rounded-xl bg-white-5 border border-white-10 hover:bg-white-10 text-zinc-300 text-sm font-semibold tracking-wider transition-all duration-200"
-      >
-        <ArrowLeft size={16} />
-        Retour
-      </button>
-
-      <div className="text-center mb-8 relative z-10">
+      {/* Barre supérieure : Bouton Retour et Titre */}
+      <div className="w-full flex items-center justify-between relative z-10 mb-2">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white-5 border border-white-10 hover:bg-white-10 text-zinc-300 text-xs font-bold transition-all duration-200"
+        >
+          <ArrowLeft size={12} />
+          Retour
+        </button>
+        
         <h2
-          className="text-4xl font-black uppercase tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-yellow-500"
-          style={{ filter: 'drop-shadow(0 0 20px rgba(239,68,68,0.3))', WebkitTextFillColor: 'transparent', WebkitBackgroundClip: 'text' }}
+          className="text-lg md:text-xl font-black uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500"
+          style={{ filter: 'drop-shadow(0 0 10px rgba(239,68,68,0.4))' }}
         >
           {getTitle()}
         </h2>
+
+        {/* Espaceur invisible à droite pour centrer le titre */}
+        <div className="w-16" />
       </div>
 
-      {/* Grille des cartes personnages */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl w-full relative z-10 mb-6 px-2">
-        {CHARACTERS.map((char) => {
-          const isSelectedByP1 = p1Selection?.id === char.id;
-          const isSelectedByP2 = p2Selection?.id === char.id;
-          const isSelected = isSelectedByP1 || isSelectedByP2;
-
-          return (
-            <div
-              key={char.id}
-              onClick={() => selectCharacter(char)}
-              onMouseEnter={playHoverSound}
-              className={`group cursor-pointer rounded-2xl p-4 border backdrop-blur-md transition-all duration-300 transform flex flex-col justify-between relative overflow-hidden ${
-                isSelectedByP1
-                  ? 'bg-pink-950-20 border-pink-500 scale-[1.02]'
-                  : isSelectedByP2
-                    ? 'bg-cyan-950-20 border-cyan-500 scale-[1.02]'
-                    : 'bg-slate-950-50 border-white-10 hover:border-pink-500-50'
-              }`}
-              style={isSelected ? {
-                transform: 'scale(1.02)',
-                boxShadow: isSelectedByP1 ? '0 0 20px rgba(219,39,119,0.25)' : '0 0 20px rgba(6,182,212,0.25)'
-              } : {}}
-            >
-              {/* Effet visuel au survol */}
-              <div
-                className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300 pointer-events-none"
-                style={{
-                  background: `radial-gradient(circle at center, ${char.colorHex} 0%, transparent 70%)`,
-                }}
-              />
-
-              {/* Tête de combattant en CSS réduite dans la carte */}
-              <div className="flex justify-center items-center py-3 relative">
-                <div
-                  className="w-16 h-16 rounded-full border-2 border-zinc-950 relative transition-transform duration-300 group-hover:scale-105 flex items-center justify-center"
-                  style={{ backgroundColor: char.colorHex, boxShadow: '0 0 15px rgba(0,0,0,0.3)' }}
-                >
-                  {/* Yeux */}
-                  <div className="absolute top-[35%] left-[20%] w-3.5 h-3.5 rounded-full bg-white border border-black flex items-center justify-center">
-                    <div className="w-1.5 h-1.5 rounded-full bg-zinc-950 translate-x-1px translate-y-1px" />
-                  </div>
-                  <div className="absolute top-[35%] right-[20%] w-3.5 h-3.5 rounded-full bg-white border border-black flex items-center justify-center">
-                    <div className="w-1.5 h-1.5 rounded-full bg-zinc-950 translate-x-1px translate-y-1px" />
-                  </div>
-
-                  {/* Gants de boxe */}
-                  <div
-                    className="absolute bottom-[-3px] left-[-8px] w-5.5 h-5.5 rounded-full border-2 border-zinc-950 shadow-md"
-                    style={{ backgroundColor: char.gloveColorHex }}
-                  />
-                  <div
-                    className="absolute bottom-[-3px] right-[-8px] w-5.5 h-5.5 rounded-full border-2 border-zinc-950 shadow-md"
-                    style={{ backgroundColor: char.gloveColorHex }}
-                  />
-                </div>
-              </div>
-
-              {/* Contenu textuel et statistiques en ligne ultra compactes */}
-              <div className="flex flex-col gap-3">
-                <h3 className="text-sm font-black uppercase text-center text-white tracking-tight group-hover:text-pink-400 transition-colors duration-200">
-                  {char.name}
-                </h3>
-
-                {/* Statistiques en ligne */}
-                <div className="grid grid-cols-4 gap-1 bg-black-30 p-2 rounded-xl border border-white-5 text-[9px] font-bold text-center text-zinc-300 font-mono">
-                  <div className="flex flex-col items-center justify-center gap-0.5">
-                    <span className="text-red-500 font-mono">{char.maxHp}</span>
-                    <span className="text-[7px] text-zinc-500 uppercase font-sans">HP</span>
-                  </div>
-                  <div className="flex flex-col items-center justify-center gap-0.5 border-l border-white-5">
-                    <span className="text-cyan-400 font-mono">{char.speed.toFixed(1)}</span>
-                    <span className="text-[7px] text-zinc-500 uppercase font-sans">SPD</span>
-                  </div>
-                  <div className="flex flex-col items-center justify-center gap-0.5 border-l border-white-5">
-                    <span className="text-orange-500 font-mono">{char.power}</span>
-                    <span className="text-[7px] text-zinc-500 uppercase font-sans">PWR</span>
-                  </div>
-                  <div className="flex flex-col items-center justify-center gap-0.5 border-l border-white-5">
-                    <span className="text-emerald-400 font-mono">{char.defense}</span>
-                    <span className="text-[7px] text-zinc-500 uppercase font-sans">DEF</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Étiquette d'état de sélection */}
-              {isSelectedByP1 && (
-                <div className="absolute top-2.5 right-2.5 bg-pink-600 border border-pink-400 text-white font-bold text-[8px] uppercase px-2 py-0.5 rounded-full shadow-md z-20">
-                  Joueur 1
-                </div>
-              )}
-              {isSelectedByP2 && (
-                <div className="absolute top-2.5 right-2.5 bg-cyan-600 border border-cyan-400 text-white font-bold text-[8px] uppercase px-2 py-0.5 rounded-full shadow-md z-20">
-                  {gameMode === 'solo' ? 'IA' : 'Joueur 2'}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Zone de récapitulatif des personnages sélectionnés */}
-      <div className="w-full max-w-4xl mt-6 relative z-10 flex flex-col md:flex-row items-center justify-center gap-6 bg-slate-950-60 border border-white-10 p-5 rounded-3xl backdrop-blur-xl">
+      {/* Layout Principal Style Street Fighter (Compact et Horizontal) */}
+      <div className="w-full max-w-4xl grid grid-cols-3 gap-4 items-center my-auto relative z-10 px-2">
         
-        {/* Joueur 1 */}
-        <div className="flex flex-col items-center gap-2 text-center w-full md:w-1/3 p-3 rounded-2xl bg-white-5 border border-white-5 relative">
-          <span className="text-[10px] text-pink-500 font-bold uppercase tracking-widest">Joueur 1</span>
+        {/* COLONNE GAUCHE - PORTRAIT ET STATS JOUEUR 1 */}
+        <div className="flex flex-col items-center gap-2 bg-slate-950-60 border border-pink-500-30 p-3 rounded-2xl backdrop-blur-xl w-full min-h-[180px] justify-between relative overflow-hidden shadow-md">
+          <div className="absolute inset-0 bg-pink-500-5 pointer-events-none" />
+          <span className="text-[9px] text-pink-500 font-black uppercase tracking-widest">Joueur 1</span>
+          
           {p1Selection ? (
-            <div className="flex flex-col items-center gap-2 animate-scale-up">
-              <div
-                className="w-16 h-16 rounded-full border-2 border-zinc-950 flex items-center justify-center animate-bounce-subtle"
-                style={{ backgroundColor: p1Selection.colorHex }}
-              >
-                <div className="absolute top-[35%] left-[20%] w-3.5 h-3.5 rounded-full bg-white border border-black flex items-center justify-center">
-                  <div className="w-1.5 h-1.5 rounded-full bg-zinc-950 translate-x-1px translate-y-1px" />
+            <div className="flex flex-col items-center gap-1.5 w-full animate-scale-up">
+              {/* Portrait compact */}
+              <div className="rounded-full border-3 border-pink-500 flex items-center justify-center bg-slate-900 shadow-md relative animate-bounce-subtle" style={{ width: '70px', height: '70px', backgroundColor: p1Selection.colorHex }}>
+                {/* Yeux */}
+                <div className="absolute top-[35%] left-[20%] rounded-full bg-white border border-black flex items-center justify-center" style={{ width: '12px', height: '12px' }}>
+                  <div className="rounded-full bg-zinc-950 translate-x-0.5 translate-y-0.5" style={{ width: '6px', height: '6px' }} />
                 </div>
-                <div className="absolute top-[35%] right-[20%] w-3.5 h-3.5 rounded-full bg-white border border-black flex items-center justify-center">
-                  <div className="w-1.5 h-1.5 rounded-full bg-zinc-950 translate-x-1px translate-y-1px" />
+                <div className="absolute top-[35%] right-[20%] rounded-full bg-white border border-black flex items-center justify-center" style={{ width: '12px', height: '12px' }}>
+                  <div className="rounded-full bg-zinc-950 translate-x-0.5 translate-y-0.5" style={{ width: '6px', height: '6px' }} />
                 </div>
+                {/* Gants */}
+                <div className="absolute bottom-[-3px] left-[-4px] rounded-full border-2 border-zinc-950 shadow-md" style={{ width: '20px', height: '20px', backgroundColor: p1Selection.gloveColorHex }} />
+                <div className="absolute bottom-[-3px] right-[-4px] rounded-full border-2 border-zinc-950 shadow-md" style={{ width: '20px', height: '20px', backgroundColor: p1Selection.gloveColorHex }} />
               </div>
-              <span className="text-sm font-black uppercase tracking-tight text-white">{p1Selection.name}</span>
+              
+              <span className="text-xs font-black uppercase tracking-tight text-white">{p1Selection.name}</span>
+              
+              {/* Stats Ultra Compactes */}
+              <div className="w-full flex flex-col gap-0.5 text-[8px] font-bold text-zinc-400">
+                <div className="flex justify-between items-center"><span className="uppercase font-sans">HP</span><span className="text-red-400 font-mono">{p1Selection.maxHp}</span></div>
+                <div className="w-full bg-zinc-900 h-0.5 rounded-full overflow-hidden"><div className="bg-red-500 h-full" style={{ width: `${(p1Selection.maxHp/120)*100}%` }} /></div>
+                <div className="flex justify-between items-center"><span className="uppercase font-sans">SPD</span><span className="text-cyan-400 font-mono">{p1Selection.speed.toFixed(1)}</span></div>
+                <div className="w-full bg-zinc-900 h-0.5 rounded-full overflow-hidden"><div className="bg-cyan-500 h-full" style={{ width: `${(p1Selection.speed/5.5)*100}%` }} /></div>
+                <div className="flex justify-between items-center"><span className="uppercase font-sans">PWR</span><span className="text-orange-400 font-mono">{p1Selection.power}</span></div>
+                <div className="w-full bg-zinc-900 h-0.5 rounded-full overflow-hidden"><div className="bg-orange-500 h-full" style={{ width: `${(p1Selection.power/10)*100}%` }} /></div>
+              </div>
             </div>
           ) : (
-            <div className="h-24 flex items-center justify-center text-zinc-600 text-xs font-bold uppercase italic">En attente J1...</div>
+            <div className="h-24 flex items-center justify-center text-zinc-600 text-[10px] font-bold uppercase italic">En attente...</div>
           )}
         </div>
 
-        {/* VS Divider ou Bouton Combattre */}
-        <div className="flex items-center justify-center w-full md:w-auto">
-          {p1Selection && p2Selection ? (
-            <button
-              onClick={handleStartFight}
-              className="py-4 px-8 rounded-2xl text-white font-black text-sm uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95 border border-white-10"
-              style={{
-                background: 'linear-gradient(to right, var(--pink-500), var(--red-500))',
-                boxShadow: '0 8px 24px rgba(239,68,68,0.4)',
-                cursor: 'pointer',
-                position: 'relative',
-                zIndex: 50
-              }}
-            >
-              Lancer le Combat
-            </button>
-          ) : (
-            <div className="text-xl md:text-2xl font-black text-zinc-700 italic font-mono uppercase tracking-widest">VS</div>
-          )}
+        {/* COLONNE CENTRALE - GRILLE DE CHOIX HORIZONTALE & BOUTON COMBAT */}
+        <div className="flex flex-col items-center gap-3 w-full justify-center">
+          {/* Grille Horizontale Compacte */}
+          <div className="flex flex-row justify-center gap-3 bg-slate-950-60 border border-white-10 p-3 rounded-2xl backdrop-blur-xl w-full justify-center">
+            {CHARACTERS.map((char) => {
+              const isSelectedByP1 = p1Selection?.id === char.id;
+              const isSelectedByP2 = p2Selection?.id === char.id;
+              const isSelected = isSelectedByP1 || isSelectedByP2;
+
+              return (
+                <div
+                  key={char.id}
+                  onClick={() => selectCharacter(char)}
+                  onMouseEnter={playHoverSound}
+                  className={`cursor-pointer rounded-xl border flex items-center justify-center transition-all duration-200 transform hover:scale-105 active:scale-95 relative overflow-hidden ${
+                    isSelectedByP1
+                      ? 'border-pink-500 bg-pink-950-20'
+                      : isSelectedByP2
+                        ? 'border-cyan-500 bg-cyan-950-20'
+                        : 'border-white-10 bg-slate-900 hover:border-pink-500-30'
+                  }`}
+                  style={{
+                    width: '70px',
+                    height: '70px',
+                    boxShadow: isSelected ? (isSelectedByP1 ? '0 0 12px rgba(219,39,119,0.4)' : '0 0 12px rgba(6,182,212,0.4)') : 'none'
+                  }}
+                >
+                  {/* Portrait réduit du perso */}
+                  <div className="rounded-full border border-zinc-950 flex items-center justify-center relative" style={{ width: '46px', height: '46px', backgroundColor: char.colorHex }}>
+                    <div className="absolute top-[35%] left-[20%] rounded-full bg-white border border-black flex items-center justify-center" style={{ width: '8px', height: '8px' }}>
+                      <div className="rounded-full bg-zinc-950 translate-x-px translate-y-px" style={{ width: '4px', height: '4px' }} />
+                    </div>
+                    <div className="absolute top-[35%] right-[20%] rounded-full bg-white border border-black flex items-center justify-center" style={{ width: '8px', height: '8px' }}>
+                      <div className="rounded-full bg-zinc-950 translate-x-px translate-y-px" style={{ width: '4px', height: '4px' }} />
+                    </div>
+                  </div>
+                  {/* Badge */}
+                  {isSelectedByP1 && <span className="absolute bottom-1 left-1 bg-pink-600 text-white text-[8px] font-black px-1 rounded-sm">J1</span>}
+                  {isSelectedByP2 && <span className="absolute bottom-1 right-1 bg-cyan-600 text-white text-[8px] font-black px-1 rounded-sm">{gameMode === 'solo' ? 'IA' : 'J2'}</span>}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Bouton de Combat Compact */}
+          <div className="w-full flex justify-center min-h-[36px]">
+            {p1Selection && p2Selection ? (
+              <button
+                onClick={handleStartFight}
+                className="w-full py-2.5 px-4 rounded-xl text-white font-black text-[10px] uppercase tracking-wider transition-all duration-200 hover:scale-103 active:scale-97 border border-white-10"
+                style={{
+                  background: 'linear-gradient(to right, var(--pink-500), var(--red-500))',
+                  boxShadow: '0 4px 15px rgba(239,68,68,0.3)',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  zIndex: 50
+                }}
+              >
+                Combattre !
+              </button>
+            ) : (
+              <div className="text-[9px] font-black text-zinc-600 italic tracking-wider uppercase">Sélectionner</div>
+            )}
+          </div>
         </div>
 
-        {/* Joueur 2 / IA */}
-        <div className="flex flex-col items-center gap-2 text-center w-full md:w-1/3 p-3 rounded-2xl bg-white-5 border border-white-5 relative">
-          <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest">{gameMode === 'solo' ? 'IA' : 'Joueur 2'}</span>
+        {/* COLONNE DROITE - PORTRAIT ET STATS JOUEUR 2 / IA */}
+        <div className="flex flex-col items-center gap-2 bg-slate-950-60 border border-cyan-500-30 p-3 rounded-2xl backdrop-blur-xl w-full min-h-[180px] justify-between relative overflow-hidden shadow-lg">
+          <div className="absolute inset-0 bg-cyan-500-5 pointer-events-none" />
+          <span className="text-[9px] text-cyan-400 font-black uppercase tracking-widest">{gameMode === 'solo' ? 'IA' : 'Joueur 2'}</span>
+          
           {p2Selection ? (
-            <div className="flex flex-col items-center gap-2 animate-scale-up">
-              <div
-                className="w-16 h-16 rounded-full border-2 border-zinc-950 flex items-center justify-center animate-bounce-subtle"
-                style={{ backgroundColor: p2Selection.colorHex }}
-              >
-                <div className="absolute top-[35%] left-[20%] w-3.5 h-3.5 rounded-full bg-white border border-black flex items-center justify-center">
-                  <div className="w-1.5 h-1.5 rounded-full bg-zinc-950 translate-x-1px translate-y-1px" />
+            <div className="flex flex-col items-center gap-1.5 w-full animate-scale-up">
+              {/* Portrait compact */}
+              <div className="rounded-full border-3 border-cyan-500 flex items-center justify-center bg-slate-900 shadow-md relative animate-bounce-subtle" style={{ width: '70px', height: '70px', backgroundColor: p2Selection.colorHex }}>
+                {/* Yeux */}
+                <div className="absolute top-[35%] left-[20%] rounded-full bg-white border border-black flex items-center justify-center" style={{ width: '12px', height: '12px' }}>
+                  <div className="rounded-full bg-zinc-950 translate-x-0.5 translate-y-0.5" style={{ width: '6px', height: '6px' }} />
                 </div>
-                <div className="absolute top-[35%] right-[20%] w-3.5 h-3.5 rounded-full bg-white border border-black flex items-center justify-center">
-                  <div className="w-1.5 h-1.5 rounded-full bg-zinc-950 translate-x-1px translate-y-1px" />
+                <div className="absolute top-[35%] right-[20%] rounded-full bg-white border border-black flex items-center justify-center" style={{ width: '12px', height: '12px' }}>
+                  <div className="rounded-full bg-zinc-950 translate-x-0.5 translate-y-0.5" style={{ width: '6px', height: '6px' }} />
                 </div>
+                {/* Gants */}
+                <div className="absolute bottom-[-3px] left-[-4px] rounded-full border-2 border-zinc-950 shadow-md" style={{ width: '20px', height: '20px', backgroundColor: p2Selection.gloveColorHex }} />
+                <div className="absolute bottom-[-3px] right-[-4px] rounded-full border-2 border-zinc-950 shadow-md" style={{ width: '20px', height: '20px', backgroundColor: p2Selection.gloveColorHex }} />
               </div>
-              <span className="text-sm font-black uppercase tracking-tight text-white">{p2Selection.name}</span>
+              
+              <span className="text-xs font-black uppercase tracking-tight text-white">{p2Selection.name}</span>
+              
+              {/* Stats Ultra Compactes */}
+              <div className="w-full flex flex-col gap-0.5 text-[8px] font-bold text-zinc-400">
+                <div className="flex justify-between items-center"><span className="uppercase font-sans">HP</span><span className="text-red-400 font-mono">{p2Selection.maxHp}</span></div>
+                <div className="w-full bg-zinc-900 h-0.5 rounded-full overflow-hidden"><div className="bg-red-500 h-full" style={{ width: `${(p2Selection.maxHp/120)*100}%` }} /></div>
+                <div className="flex justify-between items-center"><span className="uppercase font-sans">SPD</span><span className="text-cyan-400 font-mono">{p2Selection.speed.toFixed(1)}</span></div>
+                <div className="w-full bg-zinc-900 h-0.5 rounded-full overflow-hidden"><div className="bg-cyan-500 h-full" style={{ width: `${(p2Selection.speed/5.5)*100}%` }} /></div>
+                <div className="flex justify-between items-center"><span className="uppercase font-sans">PWR</span><span className="text-orange-400 font-mono">{p2Selection.power}</span></div>
+                <div className="w-full bg-zinc-900 h-0.5 rounded-full overflow-hidden"><div className="bg-orange-500 h-full" style={{ width: `${(p2Selection.power/10)*100}%` }} /></div>
+              </div>
             </div>
           ) : (
-            <div className="h-24 flex items-center justify-center text-zinc-600 text-xs font-bold uppercase italic">En attente J2...</div>
+            <div className="h-24 flex items-center justify-center text-zinc-600 text-[10px] font-bold uppercase italic">En attente...</div>
           )}
         </div>
 
       </div>
+
+      {/* Petit espaceur pour équilibrer le layout verticalement */}
+      <div className="h-4" />
     </div>
   );
 };
