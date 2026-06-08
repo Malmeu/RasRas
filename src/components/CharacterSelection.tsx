@@ -76,22 +76,44 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
   onCharactersSelected,
 }) => {
   const [p1Selection, setP1Selection] = React.useState<Character | null>(null);
+  const [p2Selection, setP2Selection] = React.useState<Character | null>(null);
 
   const selectCharacter = (char: Character) => {
     soundManager.play('punch', { pitchVariation: 0.1 });
 
     if (gameMode === 'solo') {
-      // En solo, on choisit son personnage, et l'IA en prend un autre aléatoirement
+      setP1Selection(char);
       const otherChars = CHARACTERS.filter(c => c.id !== char.id);
       const randomIAChar = otherChars[Math.floor(Math.random() * otherChars.length)];
-      onCharactersSelected(char, randomIAChar);
+      setP2Selection(randomIAChar);
     } else {
-      // En versus, le joueur 1 choisit d'abord, puis le joueur 2
+      // Versus
       if (!p1Selection) {
         setP1Selection(char);
-      } else if (char.id !== p1Selection.id) {
-        onCharactersSelected(p1Selection, char);
+      } else if (!p2Selection) {
+        if (char.id !== p1Selection.id) {
+          setP2Selection(char);
+        }
+      } else {
+        // Si les deux sont déjà sélectionnés, le clic change le choix du joueur 2 (sauf si c'est celui du J1)
+        if (char.id === p1Selection.id) {
+          // Si on reclique sur le J1, on réinitialise J1
+          setP1Selection(null);
+          setP2Selection(null);
+        } else if (char.id === p2Selection.id) {
+          // Si on reclique sur le J2, on réinitialise J2
+          setP2Selection(null);
+        } else {
+          setP2Selection(char);
+        }
       }
+    }
+  };
+
+  const handleStartFight = () => {
+    if (p1Selection && p2Selection) {
+      soundManager.play('fight');
+      onCharactersSelected(p1Selection, p2Selection);
     }
   };
 
@@ -103,7 +125,8 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
   const getTitle = () => {
     if (gameMode === 'solo') return 'Choisissez votre Combattant';
     if (!p1Selection) return 'JOUEUR 1 : Choisissez votre Combattant';
-    return 'JOUEUR 2 : Choisissez votre Combattant';
+    if (!p2Selection) return 'JOUEUR 2 : Choisissez votre Combattant';
+    return 'Prêts pour le Combat !';
   };
 
   return (
@@ -138,22 +161,24 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl w-full relative z-10 mb-6 px-2">
         {CHARACTERS.map((char) => {
           const isSelectedByP1 = p1Selection?.id === char.id;
-          const isDisabled = p1Selection !== null && isSelectedByP1 && gameMode === 'versus';
+          const isSelectedByP2 = p2Selection?.id === char.id;
+          const isSelected = isSelectedByP1 || isSelectedByP2;
 
           return (
             <div
               key={char.id}
-              onClick={() => !isDisabled && selectCharacter(char)}
+              onClick={() => selectCharacter(char)}
               onMouseEnter={playHoverSound}
-              className={`group cursor-pointer rounded-2xl p-4 border backdrop-blur-md transition-all duration-300 transform flex flex-col justify-between relative overflow-hidden ${isSelectedByP1
+              className={`group cursor-pointer rounded-2xl p-4 border backdrop-blur-md transition-all duration-300 transform flex flex-col justify-between relative overflow-hidden ${
+                isSelectedByP1
                   ? 'bg-pink-950-20 border-pink-500 scale-[1.02]'
-                  : isDisabled
-                    ? 'opacity-40 cursor-not-allowed border-white-5 bg-black-20'
+                  : isSelectedByP2
+                    ? 'bg-cyan-950-20 border-cyan-500 scale-[1.02]'
                     : 'bg-slate-950-50 border-white-10 hover:border-pink-500-50'
-                }`}
-              style={isSelectedByP1 ? {
+              }`}
+              style={isSelected ? {
                 transform: 'scale(1.02)',
-                boxShadow: '0 0 20px rgba(219,39,119,0.25)'
+                boxShadow: isSelectedByP1 ? '0 0 20px rgba(219,39,119,0.25)' : '0 0 20px rgba(6,182,212,0.25)'
               } : {}}
             >
               {/* Effet visuel au survol */}
@@ -219,13 +244,87 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
 
               {/* Étiquette d'état de sélection */}
               {isSelectedByP1 && (
-                <div className="absolute top-2.5 right-2.5 bg-pink-600 border border-pink-400 text-white font-bold text-[8px] uppercase px-2 py-0.5 rounded-full shadow-md">
+                <div className="absolute top-2.5 right-2.5 bg-pink-600 border border-pink-400 text-white font-bold text-[8px] uppercase px-2 py-0.5 rounded-full shadow-md z-20">
                   Joueur 1
+                </div>
+              )}
+              {isSelectedByP2 && (
+                <div className="absolute top-2.5 right-2.5 bg-cyan-600 border border-cyan-400 text-white font-bold text-[8px] uppercase px-2 py-0.5 rounded-full shadow-md z-20">
+                  {gameMode === 'solo' ? 'IA' : 'Joueur 2'}
                 </div>
               )}
             </div>
           );
         })}
+      </div>
+
+      {/* Zone de récapitulatif des personnages sélectionnés */}
+      <div className="w-full max-w-4xl mt-6 relative z-10 flex flex-col md:flex-row items-center justify-center gap-6 bg-slate-950-60 border border-white-10 p-5 rounded-3xl backdrop-blur-xl">
+        
+        {/* Joueur 1 */}
+        <div className="flex flex-col items-center gap-2 text-center w-full md:w-1/3 p-3 rounded-2xl bg-white-5 border border-white-5 relative">
+          <span className="text-[10px] text-pink-500 font-bold uppercase tracking-widest">Joueur 1</span>
+          {p1Selection ? (
+            <div className="flex flex-col items-center gap-2 animate-scale-up">
+              <div
+                className="w-16 h-16 rounded-full border-2 border-zinc-950 flex items-center justify-center animate-bounce-subtle"
+                style={{ backgroundColor: p1Selection.colorHex }}
+              >
+                <div className="absolute top-[35%] left-[20%] w-3.5 h-3.5 rounded-full bg-white border border-black flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 rounded-full bg-zinc-950 translate-x-1px translate-y-1px" />
+                </div>
+                <div className="absolute top-[35%] right-[20%] w-3.5 h-3.5 rounded-full bg-white border border-black flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 rounded-full bg-zinc-950 translate-x-1px translate-y-1px" />
+                </div>
+              </div>
+              <span className="text-sm font-black uppercase tracking-tight text-white">{p1Selection.name}</span>
+            </div>
+          ) : (
+            <div className="h-24 flex items-center justify-center text-zinc-600 text-xs font-bold uppercase italic">En attente J1...</div>
+          )}
+        </div>
+
+        {/* VS Divider ou Bouton Combattre */}
+        <div className="flex items-center justify-center w-full md:w-auto">
+          {p1Selection && p2Selection ? (
+            <button
+              onClick={handleStartFight}
+              className="py-4 px-8 rounded-2xl text-white font-black text-sm uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95 border border-white-10 animate-bounce-subtle"
+              style={{
+                background: 'linear-gradient(to right, var(--pink-500), var(--red-500))',
+                boxShadow: '0 8px 24px rgba(239,68,68,0.4)'
+              }}
+            >
+              Lancer le Combat
+            </button>
+          ) : (
+            <div className="text-xl md:text-2xl font-black text-zinc-700 italic font-mono uppercase tracking-widest">VS</div>
+          )}
+        </div>
+
+        {/* Joueur 2 / IA */}
+        <div className="flex flex-col items-center gap-2 text-center w-full md:w-1/3 p-3 rounded-2xl bg-white-5 border border-white-5 relative">
+          <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest">{gameMode === 'solo' ? 'IA' : 'Joueur 2'}</span>
+          {p2Selection ? (
+            <div className="flex flex-col items-center gap-2 animate-scale-up">
+              <div
+                className="w-16 h-16 rounded-full border-2 border-zinc-950 flex items-center justify-center animate-bounce-subtle"
+                style={{ backgroundColor: p2Selection.colorHex }}
+              >
+                <div className="absolute top-[35%] left-[20%] w-3.5 h-3.5 rounded-full bg-white border border-black flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 rounded-full bg-zinc-950 translate-x-1px translate-y-1px" />
+                </div>
+                <div className="absolute top-[35%] right-[20%] w-3.5 h-3.5 rounded-full bg-white border border-black flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 rounded-full bg-zinc-950 translate-x-1px translate-y-1px" />
+                </div>
+              </div>
+              <span className="text-sm font-black uppercase tracking-tight text-white">{p2Selection.name}</span>
+            </div>
+          ) : (
+            <div className="h-24 flex items-center justify-center text-zinc-600 text-xs font-bold uppercase italic">En attente J2...</div>
+          )}
+        </div>
+
       </div>
     </div>
   );

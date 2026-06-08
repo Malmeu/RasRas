@@ -28,7 +28,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStartGame }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen text-white px-4 relative overflow-hidden bg-slate-950" style={{ backgroundImage: 'radial-gradient(circle at top, var(--bg-purple-950) 0%, var(--bg-slate-950) 100%)' }}>
+    <div className="flex flex-col items-center justify-center min-h-screen text-white px-4 relative overflow-hidden bg-slate-950 bg-cover bg-center" style={{ backgroundImage: 'linear-gradient(rgba(15, 23, 42, 0.65), rgba(15, 23, 42, 0.85)), url("/assets/images/main.jpeg")' }}>
       
       {/* Grille de fond animée légère en CSS */}
       <div 
