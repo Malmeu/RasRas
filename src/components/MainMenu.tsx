@@ -28,7 +28,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStartGame }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen text-white px-4 relative overflow-hidden bg-slate-950 bg-cover bg-center" style={{ backgroundImage: 'linear-gradient(rgba(15, 23, 42, 0.65), rgba(15, 23, 42, 0.85)), url("/assets/images/main.jpeg")' }}>
+    <div className="flex flex-col items-center justify-center min-h-screen text-white px-4 relative overflow-hidden bg-slate-950" style={{ backgroundImage: 'radial-gradient(circle at top, var(--bg-purple-950) 0%, var(--bg-slate-950) 100%)' }}>
       
       {/* Grille de fond animée légère en CSS */}
       <div 
@@ -53,7 +53,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStartGame }) => {
       </div>
 
       {/* Menu Box épurée et compacte (idéale pour mobile paysage) */}
-      <div className="w-full max-w-md p-6 rounded-3xl bg-slate-950-60 border border-white-10 backdrop-blur-xl shadow-box-menu relative z-10 flex flex-col gap-4">
+      <div 
+        className="w-full max-w-md p-6 rounded-3xl border border-white-10 shadow-box-menu relative z-10 flex flex-col gap-4 bg-cover bg-center overflow-hidden"
+        style={{ backgroundImage: 'linear-gradient(rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.88)), url("/assets/images/main.jpeg")' }}
+      >
         
         {/* Choix du mode */}
         <div className="flex flex-col gap-2">
