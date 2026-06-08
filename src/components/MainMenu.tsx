@@ -28,7 +28,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStartGame }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen text-white px-4 relative overflow-hidden bg-slate-950" style={{ backgroundImage: 'radial-gradient(circle at top, var(--bg-purple-950) 0%, var(--bg-slate-950) 100%)' }}>
+    <div className="flex flex-col items-center justify-center min-h-screen text-white px-4 relative overflow-hidden bg-slate-950 bg-cover bg-center" style={{ backgroundImage: 'linear-gradient(rgba(15, 23, 42, 0.55), rgba(15, 23, 42, 0.75)), url("/assets/images/main.jpeg")' }}>
       
       {/* Grille de fond animée légère en CSS */}
       <div 
@@ -39,24 +39,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStartGame }) => {
         }} 
       />
 
-      {/* Titre Néon */}
-      <div className="text-center mb-6 relative z-10 animate-fade-in flex flex-col items-center">
-        <h1 
-          className="text-6xl md:text-7xl font-black uppercase tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 animate-bounce-subtle"
-          style={{ filter: 'drop-shadow(0 0 25px rgba(239,68,68,0.5))', WebkitTextFillColor: 'transparent', WebkitBackgroundClip: 'text' }}
-        >
-          RasRas
-        </h1>
-        <p className="text-zinc-500 text-xs font-bold tracking-widest uppercase mt-1">
-          L'arène des combattants
-        </p>
-      </div>
+      {/* Titre Néon supprimé car intégré dans la pochette main.jpeg */}
 
       {/* Menu Box épurée et compacte (idéale pour mobile paysage) */}
-      <div 
-        className="w-full max-w-md p-6 rounded-3xl border border-white-10 shadow-box-menu relative z-10 flex flex-col gap-4 bg-cover bg-center overflow-hidden"
-        style={{ backgroundImage: 'linear-gradient(rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.88)), url("/assets/images/main.jpeg")' }}
-      >
+      <div className="w-full max-w-md p-6 rounded-3xl bg-slate-950-60 border border-white-10 backdrop-blur-xl shadow-box-menu relative z-10 flex flex-col gap-4">
         
         {/* Choix du mode */}
         <div className="flex flex-col gap-2">

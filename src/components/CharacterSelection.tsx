@@ -79,6 +79,7 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
   const [p2Selection, setP2Selection] = React.useState<Character | null>(null);
 
   const selectCharacter = (char: Character) => {
+    console.log('[CharacterSelection] selectCharacter appelé pour:', char.id);
     soundManager.play('punch', { pitchVariation: 0.1 });
 
     if (gameMode === 'solo') {
@@ -86,13 +87,16 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
       const otherChars = CHARACTERS.filter(c => c.id !== char.id);
       const randomIAChar = otherChars[Math.floor(Math.random() * otherChars.length)];
       setP2Selection(randomIAChar);
+      console.log('[CharacterSelection] Mode Solo - J1 selectionné:', char.id, ', IA sélectionnée:', randomIAChar.id);
     } else {
       // Versus
       if (!p1Selection) {
         setP1Selection(char);
+        console.log('[CharacterSelection] Mode Versus - J1 selectionné:', char.id);
       } else if (!p2Selection) {
         if (char.id !== p1Selection.id) {
           setP2Selection(char);
+          console.log('[CharacterSelection] Mode Versus - J2 selectionné:', char.id);
         }
       } else {
         // Si les deux sont déjà sélectionnés, le clic change le choix du joueur 2 (sauf si c'est celui du J1)
@@ -100,19 +104,27 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
           // Si on reclique sur le J1, on réinitialise J1
           setP1Selection(null);
           setP2Selection(null);
+          console.log('[CharacterSelection] Réinitialisation des sélections.');
         } else if (char.id === p2Selection.id) {
           // Si on reclique sur le J2, on réinitialise J2
           setP2Selection(null);
+          console.log('[CharacterSelection] Réinitialisation J2.');
         } else {
           setP2Selection(char);
+          console.log('[CharacterSelection] Changement J2 pour:', char.id);
         }
       }
     }
   };
 
   const handleStartFight = () => {
+    console.log('[CharacterSelection] handleStartFight exécuté. Envoi des personnages à App.tsx :', p1Selection?.id, 'et', p2Selection?.id);
     if (p1Selection && p2Selection) {
-      soundManager.play('fight');
+      try {
+        soundManager.play('fight');
+      } catch (e) {
+        console.warn('[CharacterSelection] Erreur lecture audio fight:', e);
+      }
       onCharactersSelected(p1Selection, p2Selection);
     }
   };
@@ -289,10 +301,13 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
           {p1Selection && p2Selection ? (
             <button
               onClick={handleStartFight}
-              className="py-4 px-8 rounded-2xl text-white font-black text-sm uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95 border border-white-10 animate-bounce-subtle"
+              className="py-4 px-8 rounded-2xl text-white font-black text-sm uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95 border border-white-10"
               style={{
                 background: 'linear-gradient(to right, var(--pink-500), var(--red-500))',
-                boxShadow: '0 8px 24px rgba(239,68,68,0.4)'
+                boxShadow: '0 8px 24px rgba(239,68,68,0.4)',
+                cursor: 'pointer',
+                position: 'relative',
+                zIndex: 50
               }}
             >
               Lancer le Combat
