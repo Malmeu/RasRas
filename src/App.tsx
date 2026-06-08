@@ -436,6 +436,27 @@ function App() {
                   Dash
                 </button>
 
+                {/* Coup Spécial (Super) - Visible uniquement si jauge pleine */}
+                {liveData.p1Rage >= 100 && (
+                  <button
+                    className="mobile-action-btn animate-pulse"
+                    onPointerDown={() => { inputManager.virtualInputs.super = true; }}
+                    onPointerUp={() => { inputManager.virtualInputs.super = false; }}
+                    onPointerLeave={() => { inputManager.virtualInputs.super = false; }}
+                    style={{
+                      width: '58px',
+                      height: '58px',
+                      fontSize: '11px',
+                      background: 'linear-gradient(135deg, #dc2626 0%, #f59e0b 100%)',
+                      textShadow: '0 0 6px #f59e0b',
+                      border: '2px solid #ffffff',
+                      boxShadow: '0 0 15px rgba(245, 158, 11, 0.8)',
+                    }}
+                  >
+                    Super
+                  </button>
+                )}
+
                 {/* Frappe */}
                 <button
                   className="mobile-action-btn mobile-btn-punch"
@@ -452,9 +473,9 @@ function App() {
           {/* Aide-mémoire des touches en bas du jeu (desktop uniquement) */}
           {!showMobileControls && (
             <div className="mt-4 text-10px text-zinc-500 tracking-wider uppercase font-semibold flex gap-6">
-              <span>P1 : ZQSD / WASD + Espace (Frapper) + Shift (Dash) + C (Parer)</span>
+              <span>P1 : ZQSD / WASD + Espace (Frappe) + Shift (Dash) + C (Parer) + R (Super)</span>
               {gameMode === 'versus' && (
-                <span>P2 : Flèches + K (Frapper) + L (Dash) + I (Parer)</span>
+                <span>P2 : Flèches + K (Frappe) + L (Dash) + I (Parer) + O (Super)</span>
               )}
             </div>
           )}

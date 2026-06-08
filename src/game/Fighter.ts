@@ -69,6 +69,7 @@ export class Fighter {
   private pupilR: Graphics;
   private handL: Graphics;
   private handR: Graphics;
+  private stunStarsContainer: Container;
 
   // Cibles d'animation (pour interpolation fluide / Lerp)
   private animScaleX: number = 1.0;
@@ -104,6 +105,9 @@ export class Fighter {
 
     this.headContainer = new Container();
     this.container.addChild(this.headContainer);
+
+    this.stunStarsContainer = new Container();
+    this.container.addChild(this.stunStarsContainer);
 
     // Initialiser les éléments graphiques
     this.shadow = new Graphics();
@@ -182,6 +186,32 @@ export class Fighter {
     this.handR.fill({ color: this.config.gloveColor });
     this.handR.stroke({ width: 2, color: 0x111111 });
     this.container.addChild(this.handR);
+
+    this.drawStunStars();
+  }
+
+  /**
+   * Initialise les étoiles d'étourdissement graphiques
+   */
+  private drawStunStars() {
+    const starCount = 3;
+    const color = 0xffd700; // Couleur Or
+    for (let i = 0; i < starCount; i++) {
+      const star = new Graphics();
+      // Dessiner une forme d'étoile simple à 4 branches
+      star.moveTo(0, -5);
+      star.lineTo(1.5, -1.5);
+      star.lineTo(5, 0);
+      star.lineTo(1.5, 1.5);
+      star.lineTo(0, 5);
+      star.lineTo(-1.5, 1.5);
+      star.lineTo(-5, 0);
+      star.lineTo(-1.5, -1.5);
+      star.closePath();
+      star.fill({ color });
+      this.stunStarsContainer.addChild(star);
+    }
+    this.stunStarsContainer.visible = false;
   }
 
   /**
@@ -202,11 +232,23 @@ export class Fighter {
 
     // Gérer l'état d'étourdissement visuel (étoiles)
     if (this.state === 'stunned') {
+      this.stunStarsContainer.visible = true;
+      const time = Date.now() * 0.008;
+      this.stunStarsContainer.children.forEach((star, index) => {
+        const angle = time + (index * Math.PI * 2) / 3;
+        star.x = Math.cos(angle) * 18;
+        star.y = -36 + Math.sin(angle) * 5;
+        const scale = 0.7 + Math.sin(angle) * 0.3;
+        star.scale.set(scale);
+      });
+
       this.stunStarsTimer += dt;
-      if (this.stunStarsTimer >= 5) {
+      if (this.stunStarsTimer >= 6) {
         this.stunStarsTimer = 0;
         this.particles?.emitStunStars(this.x, this.y);
       }
+    } else {
+      this.stunStarsContainer.visible = false;
     }
 
     // Mettre à jour le timer d'état actuel
@@ -557,7 +599,8 @@ export class Fighter {
         }
       }
 
-      const actualDamage = opponent.takeDamage(damage, this.rotation, this.isHeavyPunch || this.equippedWeapon !== null, kbForce);
+      const isWeaponHit = this.equippedWeapon !== null;
+      const actualDamage = opponent.takeDamage(damage, this.rotation, this.isHeavyPunch || isWeaponHit, kbForce, isWeaponHit);
 
       // Générer des particules
       const impactAngle = this.rotation;
@@ -603,7 +646,7 @@ export class Fighter {
    * Encaisser des dégâts avec recul spécifique
    * @returns Dégâts réels infligés
    */
-  public takeDamage(amount: number, angle: number, isHeavy: boolean, customKbForce?: number): number {
+  public takeDamage(amount: number, angle: number, isHeavy: boolean, customKbForce?: number, isWeaponHit: boolean = false): number {
     if (this.state === 'ko') return 0;
 
     // Si on pare
@@ -634,8 +677,13 @@ export class Fighter {
     } else {
       // Étourdissement temporaire
       this.state = 'stunned';
-      this.stateTimer = isHeavy ? 24 : 12;
-      this.hitStunTimer = isHeavy ? 20 : 10;
+      if (isWeaponHit) {
+        this.stateTimer = 120; // 2 secondes de stun
+        this.hitStunTimer = 120;
+      } else {
+        this.stateTimer = isHeavy ? 24 : 12;
+        this.hitStunTimer = isHeavy ? 20 : 10;
+      }
     }
 
     // Plus la vie est basse, plus on génère de la rage
@@ -667,6 +715,11 @@ export class Fighter {
     if (this.particles) {
       this.particles.emitHitSparks(this.x, this.y, this.rotation, true);
       this.particles.emitDashDust(this.x, this.y, this.rotation);
+      
+      // Grosse explosion circulaire de particules d'énergie pour marquer le super !
+      for (let angle = 0; angle < Math.PI * 2; angle += 0.3) {
+        this.particles.emitHitSparks(this.x, this.y, angle, true);
+      }
     }
 
     return true;
@@ -688,6 +741,8 @@ export class Fighter {
     this.blockCooldown = 0;
     this.dashCooldown = 0;
     this.hitStunTimer = 0;
+    this.stunStarsTimer = 0;
+    this.stunStarsContainer.visible = false;
     this.container.x = startX;
     this.container.y = startY;
     this.container.rotation = 0;

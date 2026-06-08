@@ -924,9 +924,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         fighter.dash(dx, dy);
       }
 
-      if (inputs.punch && inputs.block && fighter.rage >= fighter.maxRage) {
+      const wantsSuper = inputs.super || (inputs.punch && inputs.block);
+      if (wantsSuper && fighter.rage >= fighter.maxRage) {
         if (fighter.useSuper()) {
-          soundManager.play('cheer', { volumeScale: 0.28, pitchVariation: 0.1 });
+          soundManager.play('cheer', { volumeScale: 0.35, pitchVariation: 0.1 });
         }
       }
     }

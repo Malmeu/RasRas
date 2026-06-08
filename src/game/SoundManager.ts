@@ -30,7 +30,36 @@ class SoundManager {
   };
 
   constructor() {
-    // L'AudioContext est initialisé de manière paresseuse (lazy-load) au premier clic ou interaction de l'utilisateur
+    this.loadVolume();
+  }
+
+  private loadVolume() {
+    try {
+      if (typeof window !== 'undefined') {
+        const savedVolume = localStorage.getItem('rasras_master_volume');
+        if (savedVolume !== null) {
+          this.masterVolume = parseFloat(savedVolume);
+        }
+      }
+    } catch (e) {
+      console.error('Erreur chargement volume:', e);
+    }
+  }
+
+  public setMasterVolume(volume: number) {
+    this.masterVolume = Math.max(0, Math.min(1, volume));
+    if (this.bgmGainNode) {
+      this.bgmGainNode.gain.value = this.masterVolume * this.bgmVolume;
+    }
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('rasras_master_volume', this.masterVolume.toString());
+      }
+    } catch (e) {}
+  }
+
+  public getMasterVolume(): number {
+    return this.masterVolume;
   }
 
   /**
