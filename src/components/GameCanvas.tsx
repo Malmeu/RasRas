@@ -11,6 +11,7 @@ import type { FighterConfig } from '../game/Fighter';
 import { ParticleSystem } from '../game/ParticleSystem';
 import { inputManager } from '../game/Input';
 import { soundManager } from '../game/SoundManager';
+import type { Stage } from './StageSelection';
 
 interface GameCanvasProps {
   gameMode: 'solo' | 'versus' | 'online';
@@ -33,6 +34,7 @@ interface GameCanvasProps {
   onlineRole?: 'host' | 'client' | null;
   roomCode?: string;
   isMobile?: boolean;
+  stage?: Stage;
 }
 
 interface DroppedItem {
@@ -76,6 +78,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   onlineRole,
   roomCode,
   isMobile = false,
+  stage,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -219,8 +222,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         }
       }
 
-      // 3. Charger et dessiner l'image de fond du ring carré
-      const bgTexture = await Assets.load('/assets/images/ring_background.png');
+      // 3. Charger et dessiner l'image de fond du stage
+      const stageImagePath = stage?.imagePath || '/assets/images/ring_background.png';
+      const bgTexture = await Assets.load(stageImagePath);
       if (!active) {
         try {
           if (app.renderer) {
@@ -1387,7 +1391,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       
       // Décharger la texture pour éviter les conflits de cache WebGL
       try {
-        Assets.unload('/assets/images/ring_background.png');
+        const stageImagePath = stage?.imagePath || '/assets/images/ring_background.png';
+        Assets.unload(stageImagePath);
       } catch (e) {}
       
       // Nettoyer manuellement les graphiques des armes au sol

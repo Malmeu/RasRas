@@ -13,12 +13,14 @@ import { GameCanvas } from './components/GameCanvas';
 import { HUD } from './components/HUD';
 import { GameOver } from './components/GameOver';
 import { OnlineLobby } from './components/OnlineLobby';
+import { StageSelection, STAGES } from './components/StageSelection';
+import type { Stage } from './components/StageSelection';
 import { Socket } from 'socket.io-client';
 import { Volume2, VolumeX, Gamepad } from 'lucide-react';
 import { soundManager } from './game/SoundManager';
 import { inputManager } from './game/Input';
 
-type GameScreen = 'menu' | 'selection' | 'game' | 'gameover' | 'lobby';
+type GameScreen = 'menu' | 'selection' | 'stage_selection' | 'game' | 'gameover' | 'lobby';
 
 function App() {
   const [screen, setScreen] = useState<GameScreen>('menu');
@@ -33,6 +35,9 @@ function App() {
   // Personnages sélectionnés
   const [p1Char, setP1Char] = useState<Character | null>(null);
   const [p2Char, setP2Char] = useState<Character | null>(null);
+
+  // Arène sélectionnée
+  const [selectedStage, setSelectedStage] = useState<Stage>(STAGES[0]);
 
   // Statistiques en direct du combat (remontées par le Canvas PixiJS)
   const [liveData, setLiveData] = useState({
@@ -145,7 +150,7 @@ function App() {
     }
   };
 
-  // Lance le combat après sélection des personnages
+  // Lance la sélection de l'arène après sélection des personnages
   const handleCharactersSelected = (p1: Character, p2: Character) => {
     setP1Char(p1);
     setP2Char(p2);
@@ -163,7 +168,7 @@ function App() {
     });
     
     setIsPaused(false);
-    setScreen('game');
+    setScreen('stage_selection');
   };
 
   // Lance le combat en ligne
@@ -203,7 +208,19 @@ function App() {
       setP2Char(null);
       setOnlineRole(null);
     } else if (p1Char && p2Char) {
-      handleCharactersSelected(p1Char, p2Char);
+      // Relance directement le match avec le même niveau et les mêmes personnages
+      setLiveData({
+        p1Hp: p1Char.maxHp,
+        p2Hp: p2Char.maxHp,
+        p1Rage: 0,
+        p2Rage: 0,
+        p1Combo: 0,
+        p2Combo: 0,
+        gameTime: 99,
+        isKO: false,
+      });
+      setIsPaused(false);
+      setScreen('game');
     }
   };
 
@@ -265,6 +282,16 @@ function App() {
           gameMode={gameMode as 'solo' | 'versus'}
           onBack={handleHome}
           onCharactersSelected={handleCharactersSelected}
+        />
+      )}
+
+      {screen === 'stage_selection' && (
+        <StageSelection
+          onBack={() => setScreen('selection')}
+          onStageSelected={(stage) => {
+            setSelectedStage(stage);
+            setScreen('game');
+          }}
         />
       )}
 
@@ -332,6 +359,7 @@ function App() {
               onlineRole={onlineRole}
               roomCode={roomCode}
               isMobile={showMobileControls}
+              stage={selectedStage}
             />
 
             {/* Overlay d'effet KO "Sedma kbira" de Street Fighter */}
