@@ -14,7 +14,7 @@ import { soundManager } from '../game/SoundManager';
 import type { Stage } from './StageSelection';
 
 interface GameCanvasProps {
-  gameMode: 'solo' | 'versus' | 'online';
+  gameMode: 'solo' | 'versus' | 'online' | 'training';
   difficulty: 'easy' | 'normal' | 'hard';
   player1Character: any; // caractéristiques du joueur 1
   player2Character: any; // caractéristiques du joueur 2 / IA
@@ -38,7 +38,7 @@ interface GameCanvasProps {
 }
 
 interface DroppedItem {
-  type: 'baseball_bat' | 'knife' | 'bottle';
+  type: 'baseball_bat' | 'knife' | 'bottle' | 'trash';
   x: number;
   y: number;
   targetX: number;
@@ -91,6 +91,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     cameraShake: 0,
     slowMoFactor: 1.0,
     slowMoTimer: 0,
+    timeSinceLastHit: 0,
+    trashThrowTimer: 0,
+    freezeFrameTimer: 0,
   });
 
   // Mettre à jour l'état de pause
@@ -267,6 +270,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       }
 
       const p1Config: FighterConfig = {
+        id: player1Character.id,
         name: player1Character.name,
         x: ringCenter.x - 100,
         y: ringCenter.y,
@@ -281,6 +285,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       };
 
       const p2Config: FighterConfig = {
+        id: player2Character.id,
         name: player2Character.name,
         x: ringCenter.x + 100,
         y: ringCenter.y,
@@ -325,6 +330,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           if (localFighter) {
             localFighter.takeDamage(data.damage, data.angle, data.isHeavy, data.kbForce);
           }
+          stateRef.current.timeSinceLastHit = 0; // Réinitialiser le timer d'inactivité
         });
 
         socket.on('item_spawned', (data: any) => {
@@ -385,14 +391,50 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         const state = stateRef.current;
         if (state.isPaused || state.gameOverTriggered) return;
 
-        // Gérer le ralenti (Slow-mo) de K.O.
+        // Gérer le freeze frame (arrêt sur image dramatique lors du KO)
+        if (state.freezeFrameTimer > 0) {
+          state.freezeFrameTimer -= ticker.elapsedMS;
+          // Mettre à jour uniquement les particules d'explosion
+          if (particles) {
+            particles.update(ticker.deltaTime);
+          }
+          return;
+        }
+
+        // Mode entraînement : Jauge infinie pour le P1 et vie infinie pour les deux boxeurs
+        if (gameMode === 'training') {
+          p1!.rage = p1!.maxRage;
+          p1!.hp = p1!.maxHp;
+          p2!.hp = p2!.maxHp;
+          if (p2!.state === 'ko') {
+            p2!.reset(ringCenter.x + 120, ringCenter.y);
+          }
+        }
+
+        // Gérer le ralenti (Slow-mo) et le zoom de K.O.
         let dt = ticker.deltaTime;
         if (state.slowMoTimer > 0) {
           state.slowMoTimer -= ticker.elapsedMS;
           dt *= 0.25; // 4x plus lent
           soundManager.setBgmSpeed(0.65); // ralentir la musique
+
+          // Calculer le point médian pour le zoom de caméra
+          const p1Pos = { x: p1!.x, y: p1!.y };
+          const p2Pos = { x: p2!.x, y: p2!.y };
+          const midX = (p1Pos.x + p2Pos.x) / 2;
+          const midY = (p1Pos.y + p2Pos.y) / 2;
+          
+          const progress = (2500 - state.slowMoTimer) / 2500;
+          const zoom = 1.0 + 0.75 * Math.sin(progress * Math.PI / 2); // Zoom de 1.0 à 1.75
+          
+          worldContainer.scale.set(zoom);
+          worldContainer.x = width / 2 - midX * zoom;
+          worldContainer.y = height / 2 - midY * zoom;
         } else {
           soundManager.setBgmSpeed(1.0);
+          worldContainer.scale.set(1.0);
+          worldContainer.x = 0;
+          worldContainer.y = 0;
         }
 
         // Chrono du jeu (toutes les secondes)
@@ -433,26 +475,64 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               const type = types[Math.floor(Math.random() * types.length)];
               const targetX = Math.random() * ((rightLimit - 72) - (leftLimit + 72)) + (leftLimit + 72);
               const targetY = Math.random() * ((bottomLimit - 55) - (topLimit + 50)) + (topLimit + 50);
+              const launcherIndex = Math.floor(Math.random() * crowdMembers.length);
+              const supporter = crowdMembers[launcherIndex];
+              const startX = supporter ? supporter.x : ringCenter.x;
+              const startY = supporter ? supporter.y : topLimit - 80;
               
-              let startX = ringCenter.x;
-              let startY = height + 100; // Hors écran du bas
-              let launcherIndex = -1;
-
-              if (crowdMembers.length > 0) {
-                launcherIndex = Math.floor(Math.random() * crowdMembers.length);
-                const launcher = crowdMembers[launcherIndex];
-                startX = launcher.x;
-                startY = launcher.y;
-              }
-
               spawnItem(type, startX, startY, targetX, targetY, launcherIndex);
 
               if (gameMode === 'online' && socket) {
                 socket.emit('spawn_item', {
                   roomCode,
-                  itemData: { type, startX, startY, targetX, targetY, launcherIndex }
+                  type,
+                  startX,
+                  startY,
+                  targetX,
+                  targetY,
+                  launcherIndex
                 });
               }
+            }
+
+            // Gestion de l'inactivité : lancer des détritus si pas d'action
+            if (gameMode !== 'training' && !state.gameOverTriggered && p1!.hp > 0 && p2!.hp > 0) {
+              state.timeSinceLastHit += ticker.elapsedMS;
+              
+              if (state.timeSinceLastHit > 6000) {
+                if (!state.trashThrowTimer) {
+                  state.trashThrowTimer = Math.random() * 1500 + 2000;
+                }
+                state.trashThrowTimer -= ticker.elapsedMS;
+                
+                if (state.trashThrowTimer <= 0) {
+                  state.trashThrowTimer = Math.random() * 2000 + 3000;
+                  
+                  if (crowdMembers.length > 0) {
+                    const launcherIdx = Math.floor(Math.random() * crowdMembers.length);
+                    const supporter = crowdMembers[launcherIdx];
+                    const targetFighter = Math.random() > 0.5 ? p1! : p2!;
+                    
+                    const angryQuotes = ["Bougez !", "C'est mou !", "Frappez !", "Wach hada ?", "Ouuuh !", "Yallah !", "Jouez !"];
+                    const quote = angryQuotes[Math.floor(Math.random() * angryQuotes.length)];
+                    createSpeechBubble(quote, supporter, launcherIdx);
+                    
+                    spawnItem(
+                      'trash' as any,
+                      supporter.x,
+                      supporter.y,
+                      targetFighter.x + (Math.random() - 0.5) * 35,
+                      targetFighter.y + (Math.random() - 0.5) * 35,
+                      launcherIdx
+                    );
+                  }
+                }
+              } else {
+                state.trashThrowTimer = 0;
+              }
+            } else {
+              state.timeSinceLastHit = 0;
+              state.trashThrowTimer = 0;
             }
           }
         }
@@ -642,23 +722,93 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         }
 
         if (p1Hit) {
+          state.timeSinceLastHit = 0; // Réinitialiser le timer d'inactivité
           state.cameraShake = p1!.state === 'punching' && p1!.hp > 0 ? 12 : 6;
           if (p1!.equippedWeapon) {
             soundManager.play('cheer', { volumeScale: 0.24, pitchVariation: 0.05 });
           }
           if (p2!.hp <= 0) {
+            state.freezeFrameTimer = 220; // 220 ms freeze frame
             state.slowMoTimer = 2500;
+            
+            // Explosion de particules géante
+            if (particles) particles.emitKOSparks(p2!.x, p2!.y);
+            
+            // Son final
             soundManager.play('final', { pan: (p2!.x - ringCenter.x) / ringCenter.x });
+
+            // Flash blanc PixiJS
+            const flashRect = new Graphics();
+            flashRect.rect(0, 0, width, height);
+            flashRect.fill({ color: 0xffffff, alpha: 1.0 });
+            app!.stage.addChild(flashRect);
+            let flashAlpha = 1.0;
+            const fadeFlash = (t: any) => {
+              flashAlpha -= t.deltaTime * 0.08;
+              if (flashAlpha <= 0) {
+                try {
+                  app!.stage.removeChild(flashRect);
+                  flashRect.destroy();
+                } catch (e) {}
+                app!.ticker.remove(fadeFlash);
+              } else {
+                flashRect.alpha = flashAlpha;
+              }
+            };
+            app!.ticker.add(fadeFlash);
+
+            // Filtre de contraste monochrome temporaire
+            if (containerRef.current) {
+              containerRef.current.style.filter = 'grayscale(90%) contrast(140%) brightness(110%)';
+              setTimeout(() => {
+                if (containerRef.current) containerRef.current.style.filter = 'none';
+              }, 2200);
+            }
           }
         }
         if (p2Hit) {
+          state.timeSinceLastHit = 0; // Réinitialiser le timer d'inactivité
           state.cameraShake = p2!.state === 'punching' && p2!.hp > 0 ? 12 : 6;
           if (p2!.equippedWeapon) {
             soundManager.play('cheer', { volumeScale: 0.24, pitchVariation: 0.05 });
           }
           if (p1!.hp <= 0) {
+            state.freezeFrameTimer = 220; // 220 ms freeze frame
             state.slowMoTimer = 2500;
+            
+            // Explosion de particules géante
+            if (particles) particles.emitKOSparks(p1!.x, p1!.y);
+            
+            // Son final
             soundManager.play('final', { pan: (p1!.x - ringCenter.x) / ringCenter.x });
+
+            // Flash blanc PixiJS
+            const flashRect = new Graphics();
+            flashRect.rect(0, 0, width, height);
+            flashRect.fill({ color: 0xffffff, alpha: 1.0 });
+            app!.stage.addChild(flashRect);
+            let flashAlpha = 1.0;
+            const fadeFlash = (t: any) => {
+              flashAlpha -= t.deltaTime * 0.08;
+              if (flashAlpha <= 0) {
+                try {
+                  app!.stage.removeChild(flashRect);
+                  flashRect.destroy();
+                } catch (e) {}
+                app!.ticker.remove(fadeFlash);
+              } else {
+                flashRect.alpha = flashAlpha;
+              }
+            };
+            app!.ticker.add(fadeFlash);
+
+            // Filtre de contraste monochrome temporaire
+            if (containerRef.current) {
+              containerRef.current.style.filter = 'grayscale(90%) contrast(140%) brightness(110%)';
+              setTimeout(() => {
+                if (containerRef.current) containerRef.current.style.filter = 'none';
+              }, 2200);
+            }
           }
         }
 
@@ -690,9 +840,32 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
         // --- CAMERA SHAKE EFFECT ---
         if (state.cameraShake > 0.1) {
-          worldContainer.x = (Math.random() - 0.5) * state.cameraShake;
-          worldContainer.y = (Math.random() - 0.5) * state.cameraShake;
+          const dx = (Math.random() - 0.5) * state.cameraShake;
+          const dy = (Math.random() - 0.5) * state.cameraShake;
+          
+          if (state.slowMoTimer > 0) {
+            const p1Pos = { x: p1!.x, y: p1!.y };
+            const p2Pos = { x: p2!.x, y: p2!.y };
+            const midX = (p1Pos.x + p2Pos.x) / 2;
+            const midY = (p1Pos.y + p2Pos.y) / 2;
+            const progress = (2500 - state.slowMoTimer) / 2500;
+            const zoom = 1.0 + 0.75 * Math.sin(progress * Math.PI / 2);
+            worldContainer.x = (width / 2 - midX * zoom) + dx;
+            worldContainer.y = (height / 2 - midY * zoom) + dy;
+          } else {
+            worldContainer.x = dx;
+            worldContainer.y = dy;
+          }
           state.cameraShake *= Math.pow(0.85, dt);
+        } else if (state.slowMoTimer > 0) {
+          const p1Pos = { x: p1!.x, y: p1!.y };
+          const p2Pos = { x: p2!.x, y: p2!.y };
+          const midX = (p1Pos.x + p2Pos.x) / 2;
+          const midY = (p1Pos.y + p2Pos.y) / 2;
+          const progress = (2500 - state.slowMoTimer) / 2500;
+          const zoom = 1.0 + 0.75 * Math.sin(progress * Math.PI / 2);
+          worldContainer.x = width / 2 - midX * zoom;
+          worldContainer.y = height / 2 - midY * zoom;
         } else {
           worldContainer.x = 0;
           worldContainer.y = 0;
@@ -941,6 +1114,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     let aiCurrentAction: 'chase' | 'flee' | 'block' | 'idle' = 'chase';
     
     function handleAI(ai: Fighter, target: Fighter, diff: 'easy' | 'normal' | 'hard', dt: number) {
+      if (gameMode === 'training') return; // IA inactive en mode entraînement
       if (ai.state === 'ko' || ai.state === 'stunned') return;
 
       aiUpdateTimer += dt;
@@ -1019,7 +1193,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       g.fill({ color: 0x000000, alpha: 0.25 });
     }
 
-    function drawDroppedItem(g: Graphics, type: 'baseball_bat' | 'knife' | 'bottle') {
+    function drawDroppedItem(g: Graphics, type: 'baseball_bat' | 'knife' | 'bottle' | 'trash') {
       g.clear();
       if (type === 'baseball_bat') {
         // Corps en bois
@@ -1048,6 +1222,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         // Goulot
         g.rect(6, -1.5, 4, 3);
         g.fill({ color: 0x2e8b57, alpha: 0.85 });
+      } else if (type === 'trash') {
+        // Canette froissée rouge et blanche (détritus lancé par la foule)
+        g.rect(-4, -5, 8, 10);
+        g.fill({ color: 0xef4444 });
+        g.rect(-4, -2, 8, 4);
+        g.fill({ color: 0xffffff });
+        g.circle(0, -5, 2);
+        g.stroke({ width: 0.8, color: 0xcccccc });
       }
     }
 
@@ -1158,7 +1340,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     }
 
     function spawnItem(
-      type: 'baseball_bat' | 'knife' | 'bottle',
+      type: 'baseball_bat' | 'knife' | 'bottle' | 'trash',
       startX: number,
       startY: number,
       targetX: number,
@@ -1303,11 +1485,37 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           item.graphic.x = item.x;
           item.graphic.y = item.y - item.z;
 
+          // Si c'est un projectile 'trash' en vol à faible hauteur
+          if (item.type as any === 'trash' && item.z > 0 && item.z < 18) {
+            for (const fighter of [f1, f2]) {
+              if (fighter.state !== 'ko' && fighter.state !== 'dashing') {
+                const dist = Math.hypot(fighter.x - item.x, fighter.y - item.y);
+                if (dist < fighter.radius + 8) {
+                  // Touché ! Micro-dégât de 1.5 HP, petit recul et secousse
+                  fighter.takeDamage(1.5, Math.atan2(fighter.y - item.y, fighter.x - item.x), false, 3.5, false);
+                  particles?.emitDashDust(item.x, item.y, Math.random() * Math.PI * 2);
+                  soundManager.play('punch', { pan: (item.x - ringCenter.x) / ringCenter.x, pitchVariation: 0.4, volumeScale: 0.6 });
+                  
+                  try {
+                    if (!item.shadow.destroyed) item.shadow.destroy();
+                    if (!item.graphic.destroyed) item.graphic.destroy();
+                  } catch (e) {}
+                  itemsList.splice(i, 1);
+                  break;
+                }
+              }
+            }
+          }
+
           if (item.z <= 0 && item.vz < 0) {
             item.isAirborne = false;
             item.z = 0;
             item.graphic.y = item.y;
             item.graphic.rotation = Math.random() * Math.PI * 2;
+
+            if (item.type as any === 'trash') {
+              (item as any).lifeTime = 220; // Disparaît après ~3.6s
+            }
 
             let soundName = 'block';
             let vol = 0.5;
@@ -1317,55 +1525,75 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
             } else if (item.type === 'baseball_bat') {
               soundName = 'hit';
               vol = 0.45;
+            } else if (item.type as any === 'trash') {
+              soundName = 'block';
+              vol = 0.15;
             }
             soundManager.play(soundName, { pan: (item.x - ringCenter.x) / ringCenter.x, pitchVariation: 0.3, volumeScale: vol });
           }
         } else {
-          if (gameMode === 'online') {
-            const localFighter = onlineRole === 'host' ? f1 : f2;
-            if (localFighter && localFighter.state !== 'ko') {
-              const dist = Math.hypot(localFighter.x - item.x, localFighter.y - item.y);
-              if (dist < localFighter.radius + 10) {
-                localFighter.equipWeapon(item.type);
-                soundManager.play('block', { pan: (localFighter.x - ringCenter.x) / ringCenter.x, pitchVariation: 0.1, volumeScale: 1.0 });
-
-                particles?.emitBlockSparks(item.x, item.y);
-
-                if (socket) {
-                  socket.emit('item_picked', {
-                    roomCode,
-                    itemIndex: i,
-                    pickerRole: onlineRole,
-                    itemType: item.type
-                  });
-                }
-
-                try {
-                  if (!item.shadow.destroyed) item.shadow.destroy();
-                  if (!item.graphic.destroyed) item.graphic.destroy();
-                } catch (e) {}
-
-                itemsList.splice(i, 1);
-              }
+          // Si au sol et que c'est du trash
+          if (item.type as any === 'trash') {
+            (item as any).lifeTime = ((item as any).lifeTime || 220) - dt;
+            if ((item as any).lifeTime < 50) {
+              item.graphic.alpha = (item as any).lifeTime / 50;
+              item.shadow.alpha = (item as any).lifeTime / 50;
+            }
+            if ((item as any).lifeTime <= 0) {
+              try {
+                if (!item.shadow.destroyed) item.shadow.destroy();
+                if (!item.graphic.destroyed) item.graphic.destroy();
+              } catch (e) {}
+              itemsList.splice(i, 1);
             }
           } else {
-            for (const fighter of [f1, f2]) {
-              if (fighter.state === 'ko') continue;
+            // Logique de ramassage classique (batte, couteau, bouteille)
+            if (gameMode === 'online') {
+              const localFighter = onlineRole === 'host' ? f1 : f2;
+              if (localFighter && localFighter.state !== 'ko') {
+                const dist = Math.hypot(localFighter.x - item.x, localFighter.y - item.y);
+                if (dist < localFighter.radius + 10) {
+                  localFighter.equipWeapon(item.type as any);
+                  soundManager.play('block', { pan: (localFighter.x - ringCenter.x) / ringCenter.x, pitchVariation: 0.1, volumeScale: 1.0 });
 
-              const dist = Math.hypot(fighter.x - item.x, fighter.y - item.y);
-              if (dist < fighter.radius + 10) {
-                fighter.equipWeapon(item.type);
-                soundManager.play('block', { pan: (fighter.x - ringCenter.x) / ringCenter.x, pitchVariation: 0.1, volumeScale: 1.0 });
+                  particles?.emitBlockSparks(item.x, item.y);
 
-                particles?.emitBlockSparks(item.x, item.y);
+                  if (socket) {
+                    socket.emit('item_picked', {
+                      roomCode,
+                      itemIndex: i,
+                      pickerRole: onlineRole,
+                      itemType: item.type
+                    });
+                  }
 
-                try {
-                  if (!item.shadow.destroyed) item.shadow.destroy();
-                  if (!item.graphic.destroyed) item.graphic.destroy();
-                } catch (e) {}
+                  try {
+                    if (!item.shadow.destroyed) item.shadow.destroy();
+                    if (!item.graphic.destroyed) item.graphic.destroy();
+                  } catch (e) {}
 
-                itemsList.splice(i, 1);
-                break; // Un seul combattant peut ramasser l'objet
+                  itemsList.splice(i, 1);
+                }
+              }
+            } else {
+              for (const fighter of [f1, f2]) {
+                if (fighter.state === 'ko') continue;
+
+                const dist = Math.hypot(fighter.x - item.x, fighter.y - item.y);
+                if (dist < fighter.radius + 10) {
+                  fighter.equipWeapon(item.type as any);
+                  soundManager.play('block', { pan: (fighter.x - ringCenter.x) / ringCenter.x, pitchVariation: 0.1, volumeScale: 1.0 });
+
+                  particles?.emitBlockSparks(item.x, item.y);
+
+                  try {
+                    if (!item.shadow.destroyed) item.shadow.destroy();
+                    if (!item.graphic.destroyed) item.graphic.destroy();
+                  } catch (e) {}
+
+                  itemsList.splice(i, 1);
+                  break; // Un seul combattant peut ramasser l'objet
+                }
               }
             }
           }

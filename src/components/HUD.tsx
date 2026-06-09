@@ -6,6 +6,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Pause, Play, Flame, Gamepad, Volume2, VolumeX } from 'lucide-react';
+import { inputManager } from '../game/Input';
 
 interface HUDProps {
   p1Name: string;
@@ -27,6 +28,7 @@ interface HUDProps {
   onToggleMobileControls: () => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
+  gameMode?: 'solo' | 'versus' | 'online' | 'training';
 }
 
 export const HUD: React.FC<HUDProps> = ({
@@ -49,10 +51,39 @@ export const HUD: React.FC<HUDProps> = ({
   onToggleMobileControls,
   soundEnabled,
   onToggleSound,
+  gameMode = 'solo',
 }) => {
   // Valeurs atténuées (pour les barres de vie avec délai "red damage bar")
   const [p1HpDelayed, setP1HpDelayed] = useState(p1Hp);
   const [p2HpDelayed, setP2HpDelayed] = useState(p2Hp);
+
+  // État local des contrôles pressés pour le mode entraînement
+  const [activeKeys, setActiveKeys] = useState({
+    up: false,
+    down: false,
+    left: false,
+    right: false,
+    punch: false,
+    dash: false,
+    block: false,
+    super: false,
+  });
+
+  useEffect(() => {
+    if (gameMode !== 'training') return;
+    
+    let animId: number;
+    const updateInputs = () => {
+      try {
+        const controls = inputManager.getPlayer1Controls();
+        setActiveKeys(controls);
+      } catch (e) {}
+      animId = requestAnimationFrame(updateInputs);
+    };
+    
+    animId = requestAnimationFrame(updateInputs);
+    return () => cancelAnimationFrame(animId);
+  }, [gameMode]);
 
   // Mettre à jour les barres retardées de manière fluide
   useEffect(() => {
@@ -288,6 +319,54 @@ export const HUD: React.FC<HUDProps> = ({
           )}
         </div>
       </div>
+
+      {/* Overlay du mode entraînement : Affichage des touches */}
+      {gameMode === 'training' && (
+        <div className="absolute left-4 bottom-4 p-3 rounded-2xl bg-slate-950-80 border border-white-10 backdrop-blur-md flex flex-col gap-2 z-30 animate-fade-in shadow-lg select-none pointer-events-none">
+          <span className="text-[9px] font-black tracking-widest text-pink-400 uppercase border-b border-white-10 pb-1">
+            Entrée Commandes (J1)
+          </span>
+          <div className="flex items-center gap-3">
+            {/* Flèches de direction */}
+            <div className="grid grid-cols-3 gap-1 w-20">
+              <div />
+              <div className={`p-1.5 rounded-lg border text-center font-black text-xs transition-colors ${activeKeys.up ? 'bg-pink-600 border-pink-500 text-white' : 'bg-white-5 border-white-5 text-zinc-500'}`}>
+                Z
+              </div>
+              <div />
+              <div className={`p-1.5 rounded-lg border text-center font-black text-xs transition-colors ${activeKeys.left ? 'bg-pink-600 border-pink-500 text-white' : 'bg-white-5 border-white-5 text-zinc-500'}`}>
+                Q
+              </div>
+              <div className={`p-1.5 rounded-lg border text-center font-black text-xs transition-colors ${activeKeys.down ? 'bg-pink-600 border-pink-500 text-white' : 'bg-white-5 border-white-5 text-zinc-500'}`}>
+                S
+              </div>
+              <div className={`p-1.5 rounded-lg border text-center font-black text-xs transition-colors ${activeKeys.right ? 'bg-pink-600 border-pink-500 text-white' : 'bg-white-5 border-white-5 text-zinc-500'}`}>
+                D
+              </div>
+            </div>
+
+            {/* Boutons d'action */}
+            <div className="flex flex-col gap-1">
+              <div className="flex gap-1">
+                <div className={`px-2 py-1.5 rounded-lg border text-[10px] font-black transition-colors min-w-[50px] text-center ${activeKeys.punch ? 'bg-pink-600 border-pink-500 text-white' : 'bg-white-5 border-white-5 text-zinc-500'}`}>
+                  ESPACE
+                </div>
+                <div className={`px-2 py-1.5 rounded-lg border text-[10px] font-black transition-colors min-w-[50px] text-center ${activeKeys.block ? 'bg-pink-600 border-pink-500 text-white' : 'bg-white-5 border-white-5 text-zinc-500'}`}>
+                  PARER
+                </div>
+              </div>
+              <div className="flex gap-1">
+                <div className={`px-2 py-1.5 rounded-lg border text-[10px] font-black transition-colors min-w-[50px] text-center ${activeKeys.dash ? 'bg-pink-600 border-pink-500 text-white' : 'bg-white-5 border-white-5 text-zinc-500'}`}>
+                  DASH
+                </div>
+                <div className={`px-2 py-1.5 rounded-lg border text-[10px] font-black transition-colors min-w-[50px] text-center ${activeKeys.super ? 'bg-red-600 border-red-500 text-white shadow-md' : 'bg-white-5 border-white-5 text-zinc-500'}`}>
+                  SUPER
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
     </div>
   );

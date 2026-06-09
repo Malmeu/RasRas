@@ -269,6 +269,73 @@ export class ParticleSystem {
   }
 
   /**
+   * Émet une explosion de particules géante pour le K.O. final
+   */
+  public emitKOSparks(x: number, y: number) {
+    // 1. Éjecter de grandes étincelles dans toutes les directions (360°)
+    const sparksCount = 45;
+    const colors = [0xff0055, 0xffaa00, 0xffffff, 0xff0033];
+    
+    for (let i = 0; i < sparksCount; i++) {
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const graphic = new Graphics();
+      const length = 15 + Math.random() * 22;
+      graphic.moveTo(-length / 2, 0);
+      graphic.lineTo(length / 2, 0);
+      graphic.stroke({ width: 3.5 + Math.random() * 3, color: color });
+
+      const angle = (i / sparksCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.15;
+      const speed = 7 + Math.random() * 9;
+      graphic.rotation = angle;
+
+      const p: Particle = {
+        graphic,
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        alpha: 1.0,
+        scale: 1.25,
+        color,
+        life: 25 + Math.random() * 25,
+        maxLife: 50,
+        type: 'spark',
+      };
+
+      this.container.addChild(graphic);
+      this.particles.push(p);
+    }
+
+    // 2. Éjecter des anneaux de poussière/fumée géante (onde de choc)
+    const dustCount = 18;
+    for (let i = 0; i < dustCount; i++) {
+      const graphic = new Graphics();
+      graphic.circle(0, 0, 14 + Math.random() * 12);
+      graphic.fill({ color: 0xff3366, alpha: 0.3 });
+
+      const angle = (i / dustCount) * Math.PI * 2;
+      const speed = 2.5 + Math.random() * 3.5;
+
+      const p: Particle = {
+        graphic,
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        alpha: 0.3,
+        scale: 1.1,
+        color: 0xff3366,
+        life: 35 + Math.random() * 15,
+        maxLife: 50,
+        type: 'dust',
+      };
+
+      this.container.addChild(graphic);
+      this.particles.push(p);
+    }
+  }
+
+  /**
    * Nettoie toutes les particules à la fin
    */
   public destroy() {

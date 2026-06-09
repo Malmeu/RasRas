@@ -24,7 +24,7 @@ type GameScreen = 'menu' | 'selection' | 'stage_selection' | 'game' | 'gameover'
 
 function App() {
   const [screen, setScreen] = useState<GameScreen>('menu');
-  const [gameMode, setGameMode] = useState<'solo' | 'versus' | 'online'>('solo');
+  const [gameMode, setGameMode] = useState<'solo' | 'versus' | 'online' | 'training'>('solo');
   const [difficulty, setDifficulty] = useState<'easy' | 'normal' | 'hard'>('normal');
   
   // États multijoueur en ligne
@@ -140,7 +140,7 @@ function App() {
   };
 
   // Initialise le jeu après sélection du mode
-  const handleStartGame = (mode: 'solo' | 'versus' | 'online', diff: 'easy' | 'normal' | 'hard') => {
+  const handleStartGame = (mode: 'solo' | 'versus' | 'online' | 'training', diff: 'easy' | 'normal' | 'hard') => {
     setGameMode(mode);
     setDifficulty(diff);
     if (mode === 'online') {
@@ -279,7 +279,7 @@ function App() {
 
       {screen === 'selection' && (
         <CharacterSelection
-          gameMode={gameMode as 'solo' | 'versus'}
+          gameMode={gameMode === 'versus' ? 'versus' : 'solo'}
           onBack={handleHome}
           onCharactersSelected={handleCharactersSelected}
         />
@@ -393,6 +393,7 @@ function App() {
                 onToggleMobileControls={() => setShowMobileControls(!showMobileControls)}
                 soundEnabled={soundEnabled}
                 onToggleSound={toggleSound}
+                gameMode={gameMode}
               />
             </div>
 

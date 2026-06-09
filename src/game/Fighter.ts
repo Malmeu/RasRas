@@ -12,6 +12,7 @@ import { ParticleSystem } from './ParticleSystem';
 export type FighterState = 'idle' | 'moving' | 'punching' | 'dashing' | 'blocking' | 'stunned' | 'ko';
 
 export interface FighterConfig {
+  id: string;
   name: string;
   x: number;
   y: number;
@@ -22,7 +23,7 @@ export interface FighterConfig {
   defense: number;
   maxHp: number;
   isPlayer: boolean;
-  keyboardLayout: 'player1' | 'player2' | 'ai';
+  keyboardLayout: 'player1' | 'player2' | 'ai' | 'network';
 }
 
 export class Fighter {
@@ -58,6 +59,12 @@ export class Fighter {
   private punchCombo: number = 0;
   private comboResetTimer: number = 0;
   public isHeavyPunch: boolean = false;
+  
+  // Propriétés des compétences spéciales
+  public specialAttackType: 'headbutt' | 'slide' | 'combo' | null = null;
+  public hasHitThisState: boolean = false;
+  private hasHitFirstCombo: boolean = false;
+  private hasHitSecondCombo: boolean = false;
 
   // Objets graphiques internes (pour l'animation)
   private shadow: Graphics;
@@ -356,7 +363,27 @@ export class Fighter {
     const speedMagnitude = Math.hypot(this.vx, this.vy);
 
     // 1. Définir les cibles de Squash & Stretch selon l'état
-    if (this.state === 'dashing') {
+    if (this.specialAttackType === 'headbutt' && this.state === 'punching') {
+      if (this.stateTimer > 20) {
+        // Préparation : Samir gonfle sa tête
+        this.animScaleX = 1.7;
+        this.animScaleY = 1.7;
+      } else {
+        // Impact : La tête se projette
+        this.animScaleX = 1.85;
+        this.animScaleY = 0.95;
+        // Propulsion physique à la frame d'impact 20
+        if (this.stateTimer > 18 && this.stateTimer <= 20) {
+          const dashSpeed = 13.5;
+          this.vx = Math.cos(this.rotation) * dashSpeed;
+          this.vy = Math.sin(this.rotation) * dashSpeed;
+        }
+      }
+    } else if (this.specialAttackType === 'slide' && this.state === 'punching') {
+      // Glissade aplatie de Zouzou
+      this.animScaleX = 1.45;
+      this.animScaleY = 0.45;
+    } else if (this.state === 'dashing') {
       // S'étire dans le sens du mouvement rapide
       this.animScaleX = 1.35;
       this.animScaleY = 0.75;
@@ -392,19 +419,50 @@ export class Fighter {
     let targetRY = -12;
 
     if (this.state === 'punching') {
-      // Projection du poing vers l'avant !
-      const punchProgress = this.stateTimer / (this.isHeavyPunch ? 16 : 10); // 0 à 1
-      const punchDist = this.isHeavyPunch ? 65 : 45;
-
-      // Interpolation sinusoïdale pour l'aller-retour du poing
-      const punchOffset = Math.sin(punchProgress * Math.PI) * punchDist;
-
-      if (this.isLeftPunch) {
-        targetLX = -12 + punchOffset;
-        targetLY = -30;
+      if (this.specialAttackType === 'headbutt') {
+        // Coup de tête de Samir : les gants restent rapprochés en garde, le corps fait l'impact
+        targetLX = -18;
+        targetLY = -18;
+        targetRX = 18;
+        targetRY = -18;
+      } else if (this.specialAttackType === 'slide') {
+        // Glissade de Zouzou : gants tendus vers le sol en avant
+        targetLX = -8;
+        targetLY = -10;
+        targetRX = 8;
+        targetRY = -10;
+      } else if (this.specialAttackType === 'combo') {
+        // Combo de Momo : alterner le poing gauche et droit
+        if (this.stateTimer > 16) {
+          const progress = (this.stateTimer - 16) / 16;
+          const punchOffset = Math.sin(progress * Math.PI) * 55;
+          targetLX = -12 + punchOffset;
+          targetLY = -28;
+          targetRX = 22;
+          targetRY = -10;
+        } else {
+          const progress = this.stateTimer / 16;
+          const punchOffset = Math.sin(progress * Math.PI) * 55;
+          targetLX = -22;
+          targetLY = -10;
+          targetRX = 12 + punchOffset;
+          targetRY = -28;
+        }
       } else {
-        targetRX = 12 + punchOffset;
-        targetRY = -30;
+        // Projection du poing vers l'avant !
+        const punchProgress = this.stateTimer / (this.isHeavyPunch ? 16 : 10); // 0 à 1
+        const punchDist = this.isHeavyPunch ? 65 : 45;
+
+        // Interpolation sinusoïdale pour l'aller-retour du poing
+        const punchOffset = Math.sin(punchProgress * Math.PI) * punchDist;
+
+        if (this.isLeftPunch) {
+          targetLX = -12 + punchOffset;
+          targetLY = -30;
+        } else {
+          targetRX = 12 + punchOffset;
+          targetRY = -30;
+        }
       }
     } else if (this.state === 'blocking') {
       // Rapprocher les deux gants devant le visage pour former un bouclier
@@ -494,6 +552,7 @@ export class Fighter {
   public punch(): boolean {
     if (this.state === 'ko' || this.state === 'stunned' || this.state === 'dashing' || this.punchCooldown > 0) return false;
 
+    this.specialAttackType = null; // Réinitialiser le type spécial
     this.state = 'punching';
     this.isLeftPunch = !this.isLeftPunch;
 
@@ -564,34 +623,78 @@ export class Fighter {
    * @param opponent Combattant adverse
    */
   public checkHit(opponent: Fighter): boolean {
-    if (this.state !== 'punching' || this.stateTimer < 3 || this.stateTimer > 7) return false;
+    if (this.state !== 'punching') return false;
     if (opponent.state === 'ko') return false;
 
-    // Calculer la position globale du poing attaquant
+    let isHitting = false;
+    let punchDist = this.isHeavyPunch ? 65 : 45;
+    let forceHeavy = this.isHeavyPunch;
+    let baseDamage = this.isHeavyPunch ? 1.0 : 0.4;
+    let kbForce = this.isHeavyPunch ? 10 : 5;
+    let ignoresBlock = false;
+    let causesStun = false;
+    let stunDuration = 0;
+
+    if (this.specialAttackType === 'headbutt') {
+      // Impact à la propulsion (entre frames 18 et 23)
+      isHitting = this.stateTimer >= 18 && this.stateTimer <= 23 && !this.hasHitThisState;
+      punchDist = 50;
+      baseDamage = 2.0; // Dégâts de tête colossaux !
+      kbForce = 15;
+      ignoresBlock = true; // Brise la garde !
+      causesStun = true;
+      stunDuration = 90; // 1.5s de stun
+    } else if (this.specialAttackType === 'slide') {
+      // Glissade faucheuse : touche tout au long si pas encore touché
+      isHitting = this.stateTimer >= 6 && this.stateTimer <= 25 && !this.hasHitThisState;
+      punchDist = 20;
+      baseDamage = 1.1;
+      kbForce = 22; // Très grand recul faucheur
+    } else if (this.specialAttackType === 'combo') {
+      // Momo Combo : deux impacts distincts (frames 22-25 et 10-13)
+      const firstHit = this.stateTimer >= 22 && this.stateTimer <= 25 && !this.hasHitFirstCombo;
+      const secondHit = this.stateTimer >= 10 && this.stateTimer <= 13 && !this.hasHitSecondCombo;
+      isHitting = firstHit || secondHit;
+      punchDist = 45;
+      baseDamage = 0.9; // 0.9x par coup (total 1.8x)
+      kbForce = 7;
+      if (firstHit) {
+        this.hasHitFirstCombo = true;
+        this.isLeftPunch = true;
+      }
+      if (secondHit) {
+        this.hasHitSecondCombo = true;
+        this.isLeftPunch = false;
+      }
+    } else {
+      // Punch normal
+      isHitting = this.stateTimer >= 3 && this.stateTimer <= 7;
+    }
+
+    if (!isHitting) return false;
+
+    // Calculer la position globale du point d'impact
     const cos = Math.cos(this.rotation);
     const sin = Math.sin(this.rotation);
-
-    // Le poing actif se projette vers l'avant
-    const punchDist = this.isHeavyPunch ? 65 : 45;
     const handX = this.x + punchDist * cos;
     const handY = this.y + punchDist * sin;
 
-    // Distance entre le poing et le centre de l'adversaire
+    // Distance entre l'impact et l'adversaire
     const dist = Math.hypot(opponent.x - handX, opponent.y - handY);
 
-    // Si la distance est inférieure au rayon de l'adversaire + le rayon du gant
-    if (dist < opponent.radius + 10) {
-      // Dégâts
-      // Calcul des dégâts réduits (base + puissance de l'attaquant)
-      const baseDamage = this.isHeavyPunch ? 1.0 : 0.4;
-      let damage = baseDamage + (this.config.power * 0.05);
-      let kbForce = this.isHeavyPunch ? 10 : 5;
+    if (dist < opponent.radius + 12) {
+      if (this.specialAttackType === 'headbutt' || this.specialAttackType === 'slide') {
+        this.hasHitThisState = true;
+      }
 
-      // Bonus d'arme
-      if (this.equippedWeapon) {
+      // Calculer les dégâts
+      let damage = baseDamage + (this.config.power * 0.05);
+
+      // Bonus d'arme (seulement si pas en attaque spéciale)
+      if (this.equippedWeapon && !this.specialAttackType) {
         if (this.equippedWeapon === 'baseball_bat') {
           damage *= 1.8;
-          kbForce = 24; // Recul phénoménal !
+          kbForce = 24;
         } else if (this.equippedWeapon === 'knife') {
           damage *= 2.2;
         } else if (this.equippedWeapon === 'bottle') {
@@ -599,29 +702,41 @@ export class Fighter {
         }
       }
 
-      const isWeaponHit = this.equippedWeapon !== null;
-      const actualDamage = opponent.takeDamage(damage, this.rotation, this.isHeavyPunch || isWeaponHit, kbForce, isWeaponHit);
+      const isWeaponHit = this.equippedWeapon !== null && !this.specialAttackType;
+      const actualDamage = opponent.takeDamage(
+        damage,
+        this.rotation,
+        forceHeavy || isWeaponHit,
+        kbForce,
+        isWeaponHit,
+        ignoresBlock
+      );
+
+      // Si le coup a touché et qu'il applique un stun
+      if (causesStun && actualDamage > 0) {
+        opponent.state = 'stunned';
+        opponent.stateTimer = stunDuration;
+        opponent.hitStunTimer = stunDuration - 10;
+        soundManager.play('punch_heavy', { pan: (opponent.x - 400) / 400 });
+      }
 
       // Générer des particules
       const impactAngle = this.rotation;
       if (opponent.state === 'blocking' && actualDamage === 0) {
         this.particles?.emitBlockSparks(handX, handY);
       } else {
-        this.particles?.emitHitSparks(handX, handY, impactAngle, this.isHeavyPunch || this.equippedWeapon !== null);
+        this.particles?.emitHitSparks(handX, handY, impactAngle, forceHeavy || isWeaponHit);
         
-        // Si l'attaquant porte un couteau, on génère des étincelles supplémentaires rouges (sueur/sang)
-        if (this.equippedWeapon === 'knife') {
+        if (this.equippedWeapon === 'knife' && !this.specialAttackType) {
           this.particles?.emitHitSparks(handX, handY, impactAngle + Math.PI, true);
         }
 
-        // Gérer l'usure ou la casse de l'arme
-        if (this.equippedWeapon) {
+        // Casse de l'arme
+        if (this.equippedWeapon && !this.specialAttackType) {
           if (this.equippedWeapon === 'bottle') {
-            // Son de bouteille en verre qui se brise
             soundManager.play('block', { pan: (this.x - 400) / 400, pitchVariation: 0.3, volumeScale: 1.2 });
-            // Étourdit longuement l'adversaire
             opponent.state = 'stunned';
-            opponent.stateTimer = 55; // 0.9s de stun
+            opponent.stateTimer = 55;
             opponent.hitStunTimer = 45;
             this.clearWeapon();
           } else {
@@ -632,8 +747,10 @@ export class Fighter {
           }
         }
 
-        // Ajouter de la rage/super à l'attaquant s'il réussit son coup
-        this.rage = Math.min(this.maxRage, this.rage + (this.isHeavyPunch ? 15 : 6));
+        // Ajouter de la rage s'il ne s'agit pas du super lui-même
+        if (!this.specialAttackType) {
+          this.rage = Math.min(this.maxRage, this.rage + (forceHeavy ? 15 : 6));
+        }
       }
 
       return true;
@@ -646,11 +763,11 @@ export class Fighter {
    * Encaisser des dégâts avec recul spécifique
    * @returns Dégâts réels infligés
    */
-  public takeDamage(amount: number, angle: number, isHeavy: boolean, customKbForce?: number, isWeaponHit: boolean = false): number {
+  public takeDamage(amount: number, angle: number, isHeavy: boolean, customKbForce?: number, isWeaponHit: boolean = false, ignoresBlock: boolean = false): number {
     if (this.state === 'ko') return 0;
 
-    // Si on pare
-    if (this.state === 'blocking') {
+    // Si on pare (et que l'attaque ne brise pas la garde)
+    if (this.state === 'blocking' && !ignoresBlock) {
       soundManager.play('block', { pan: (this.x - 400) / 400 });
       // Ajouter de la rage lors d'une parade réussie !
       this.rage = Math.min(this.maxRage, this.rage + 10);
@@ -701,22 +818,57 @@ export class Fighter {
     this.rage = 0;
     this.state = 'punching';
     this.isHeavyPunch = true;
-    this.stateTimer = 22;
-    this.punchCooldown = 35;
     this.isLeftPunch = !this.isLeftPunch;
+    
+    // Réinitialiser les collisions spéciales
+    this.hasHitThisState = false;
+    this.hasHitFirstCombo = false;
+    this.hasHitSecondCombo = false;
 
-    // Super dash en avant + énorme coup de poing
-    const dashSpeed = 10;
-    this.vx = Math.cos(this.rotation) * dashSpeed;
-    this.vy = Math.sin(this.rotation) * dashSpeed;
+    // Configurer l'attaque spéciale selon l'identité du combattant
+    if (this.config.id === 'raoul') {
+      // Samir : Coup de tête (très lourd, lent, brise-garde et stun)
+      this.specialAttackType = 'headbutt';
+      this.stateTimer = 45;
+      this.punchCooldown = 55;
+      
+      // Reculer de quelques pixels pour l'élan initial
+      this.vx = -Math.cos(this.rotation) * 3.5;
+      this.vy = -Math.sin(this.rotation) * 3.5;
+      
+      soundManager.play('fight', { pan: (this.x - 400) / 400, volumeScale: 1.2 });
+    } else if (this.config.id === 'zouzou') {
+      // Zouzou : Glissade basse faucheuse ultra-rapide
+      this.specialAttackType = 'slide';
+      this.stateTimer = 30;
+      this.punchCooldown = 40;
+      
+      // Projection physique rapide vers l'avant
+      const dashSpeed = 17.5;
+      this.vx = Math.cos(this.rotation) * dashSpeed;
+      this.vy = Math.sin(this.rotation) * dashSpeed;
+      
+      soundManager.play('punch_heavy', { pan: (this.x - 400) / 400, volumeScale: 1.1 });
+    } else {
+      // Momo (et autres par défaut) : Combo double coup de poing rapide (Jab-Cross)
+      this.specialAttackType = 'combo';
+      this.stateTimer = 32;
+      this.punchCooldown = 45;
+      
+      // Petit dash avant
+      const dashSpeed = 6.5;
+      this.vx = Math.cos(this.rotation) * dashSpeed;
+      this.vy = Math.sin(this.rotation) * dashSpeed;
+      
+      soundManager.play('punch', { pan: (this.x - 400) / 400, volumeScale: 1.0, pitchVariation: 0.05 });
+    }
 
-    // Son de super et particules de super
-    soundManager.play('fight', { pan: (this.x - 400) / 400, volumeScale: 1.2 });
+    // Effets visuels de Super
     if (this.particles) {
       this.particles.emitHitSparks(this.x, this.y, this.rotation, true);
       this.particles.emitDashDust(this.x, this.y, this.rotation);
       
-      // Grosse explosion circulaire de particules d'énergie pour marquer le super !
+      // Explosion circulaire spectaculaire
       for (let angle = 0; angle < Math.PI * 2; angle += 0.3) {
         this.particles.emitHitSparks(this.x, this.y, angle, true);
       }
@@ -743,6 +895,10 @@ export class Fighter {
     this.hitStunTimer = 0;
     this.stunStarsTimer = 0;
     this.stunStarsContainer.visible = false;
+    this.specialAttackType = null;
+    this.hasHitThisState = false;
+    this.hasHitFirstCombo = false;
+    this.hasHitSecondCombo = false;
     this.container.x = startX;
     this.container.y = startY;
     this.container.rotation = 0;

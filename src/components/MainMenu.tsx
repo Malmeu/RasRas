@@ -11,11 +11,11 @@ import { inputManager } from '../game/Input';
 import type { KeyMapping } from '../game/Input';
 
 interface MainMenuProps {
-  onStartGame: (mode: 'solo' | 'versus' | 'online', difficulty: 'easy' | 'normal' | 'hard') => void;
+  onStartGame: (mode: 'solo' | 'versus' | 'online' | 'training', difficulty: 'easy' | 'normal' | 'hard') => void;
 }
 
 export const MainMenu: React.FC<MainMenuProps> = ({ onStartGame }) => {
-  const [mode, setMode] = React.useState<'solo' | 'versus' | 'online'>('solo');
+  const [mode, setMode] = React.useState<'solo' | 'versus' | 'online' | 'training'>('solo');
   const [difficulty, setDifficulty] = React.useState<'easy' | 'normal' | 'hard'>('normal');
   const [showControls, setShowControls] = React.useState(false);
   const [showOptions, setShowOptions] = React.useState(false);
@@ -154,6 +154,23 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStartGame }) => {
               En Ligne
             </button>
           </div>
+          
+          {/* Bouton Entraînement */}
+          <button
+            onClick={() => { setMode('training'); playHoverSound(); }}
+            className={`w-full py-2.5 rounded-2xl border transition-all duration-300 font-black uppercase text-[10px] tracking-wider flex items-center justify-center gap-1.5 ${
+              mode === 'training'
+                ? 'border-pink-500 text-white'
+                : 'bg-white-5 border-white-10 text-zinc-400'
+            }`}
+            style={mode === 'training' ? {
+              background: 'linear-gradient(to right, var(--pink-600), var(--red-600))',
+              boxShadow: '0 0 12px rgba(219,39,119,0.25)'
+            } : {}}
+          >
+            <Swords size={14} />
+            Mode Entraînement
+          </button>
         </div>
 
         {/* Difficulté (si solo) */}
