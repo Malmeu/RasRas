@@ -61,10 +61,15 @@ export class Fighter {
   public isHeavyPunch: boolean = false;
   
   // Propriétés des compétences spéciales
-  public specialAttackType: 'headbutt' | 'slide' | 'combo' | null = null;
+  public specialAttackType: 'headbutt' | 'slide' | 'combo' | 'shockwave' | 'projectile' | 'spin' | null = null;
   public hasHitThisState: boolean = false;
   private hasHitFirstCombo: boolean = false;
   private hasHitSecondCombo: boolean = false;
+
+  // Variables additionnelles pour les supers
+  public activeProjectile: { x: number, y: number, vx: number, vy: number, active: boolean, graphic: Graphics } | null = null;
+  private spinAngle: number = 0;
+  private spinHitTimer: number = 0;
 
   // Objets graphiques internes (pour l'animation)
   private shadow: Graphics;
@@ -194,7 +199,165 @@ export class Fighter {
     this.handR.stroke({ width: 2, color: 0x111111 });
     this.container.addChild(this.handR);
 
+    this.drawAccessories();
     this.drawStunStars();
+  }
+
+  /**
+   * Dessine les accessoires visuels uniques de chaque combattant
+   */
+  private drawAccessories() {
+    const id = this.config.id;
+
+    // Cils pour les personnages féminins
+    if (id === 'kahina' || id === 'yasmina' || id === 'meriem') {
+      this.drawEyelashes();
+    }
+
+    if (id === 'raoul') {
+      // Samir : Grosse moustache noire
+      const mustache = new Graphics();
+      mustache.moveTo(-12, 0);
+      mustache.quadraticCurveTo(0, 5, 12, 0);
+      mustache.quadraticCurveTo(0, -2, -12, 0);
+      mustache.closePath();
+      mustache.fill({ color: 0x1a1a1a });
+      mustache.stroke({ width: 1.5, color: 0x000000 });
+      this.headContainer.addChild(mustache);
+    } 
+    else if (id === 'zouzou') {
+      // Zouzou : Cheveux hérissés jaunes dorés
+      const hair = new Graphics();
+      hair.moveTo(-20, -18);
+      hair.lineTo(-15, -34);
+      hair.lineTo(-8, -24);
+      hair.lineTo(0, -38);
+      hair.lineTo(8, -24);
+      hair.lineTo(15, -34);
+      hair.lineTo(20, -18);
+      hair.closePath();
+      hair.fill({ color: 0xffd700 });
+      hair.stroke({ width: 2, color: 0x111111 });
+      this.headContainer.addChild(hair);
+    } 
+    else if (id === 'momo') {
+      // Momo : Bandeau rouge de ninja
+      const headband = new Graphics();
+      headband.rect(-27, -18, 54, 6);
+      headband.fill({ color: 0xef4444 });
+      headband.stroke({ width: 1.5, color: 0x111111 });
+
+      const knot = new Graphics();
+      knot.moveTo(-25, -15);
+      knot.lineTo(-34, -10);
+      knot.lineTo(-27, -12);
+      knot.lineTo(-31, -4);
+      knot.closePath();
+      knot.fill({ color: 0xcc1111 });
+      knot.stroke({ width: 1.5, color: 0x111111 });
+
+      this.headContainer.addChild(knot);
+      this.headContainer.addChild(headband);
+    } 
+    else if (id === 'kahina') {
+      // Kahina : Crinière sauvage orange flamboyante
+      const mane = new Graphics();
+      mane.ellipse(0, 4, 32, 30);
+      mane.fill({ color: 0xd97706 });
+      mane.stroke({ width: 2, color: 0x111111 });
+      this.headContainer.addChildAt(mane, 0); // Placé derrière
+
+      const bangs = new Graphics();
+      bangs.moveTo(-20, -18);
+      bangs.quadraticCurveTo(-10, -25, 0, -20);
+      bangs.quadraticCurveTo(10, -25, 20, -18);
+      bangs.quadraticCurveTo(0, -10, -20, -18);
+      bangs.closePath();
+      bangs.fill({ color: 0xd97706 });
+      bangs.stroke({ width: 1.5, color: 0x111111 });
+      this.headContainer.addChild(bangs);
+    } 
+    else if (id === 'yasmina') {
+      // Yasmina : Cheveux noirs avec longue queue de cheval et ruban rose
+      const hairBase = new Graphics();
+      hairBase.ellipse(0, -4, 29, 25);
+      hairBase.fill({ color: 0x1f1f1f });
+      hairBase.stroke({ width: 2, color: 0x111111 });
+      this.headContainer.addChildAt(hairBase, 0);
+
+      const ponytail = new Graphics();
+      ponytail.moveTo(18, -12);
+      ponytail.bezierCurveTo(38, -22, 42, 12, 34, 25);
+      ponytail.bezierCurveTo(28, 10, 26, -5, 18, -12);
+      ponytail.closePath();
+      ponytail.fill({ color: 0x111111 });
+      ponytail.stroke({ width: 1.5, color: 0x111111 });
+      this.headContainer.addChildAt(ponytail, 0);
+
+      const ribbon = new Graphics();
+      ribbon.circle(20, -12, 5);
+      ribbon.fill({ color: 0xec4899 });
+      ribbon.stroke({ width: 1, color: 0x111111 });
+      this.headContainer.addChild(ribbon);
+    } 
+    else if (id === 'lamine') {
+      // Lamine : Barbe noire de trois jours et lunettes de soleil
+      const beard = new Graphics();
+      beard.moveTo(-22, 8);
+      beard.quadraticCurveTo(0, 31, 22, 8);
+      beard.quadraticCurveTo(0, 18, -22, 8);
+      beard.closePath();
+      beard.fill({ color: 0x242424 });
+      beard.stroke({ width: 1.5, color: 0x111111 });
+      this.headContainer.addChild(beard);
+
+      const glasses = new Graphics();
+      glasses.rect(-17, -12, 11, 7);
+      glasses.rect(6, -12, 11, 7);
+      glasses.rect(-6, -10, 12, 2);
+      glasses.fill({ color: 0x111111 });
+      glasses.stroke({ width: 1.5, color: 0x555555 });
+      this.headContainer.addChild(glasses);
+    } 
+    else if (id === 'meriem') {
+      // Meriem : Cheveux bouclés violets et bandeau de sport blanc
+      const hair = new Graphics();
+      hair.circle(-21, -10, 10);
+      hair.circle(21, -10, 10);
+      hair.circle(-16, -21, 10);
+      hair.circle(16, -21, 10);
+      hair.circle(0, -24, 11);
+      hair.fill({ color: 0x7c3aed });
+      hair.stroke({ width: 1.5, color: 0x111111 });
+      this.headContainer.addChildAt(hair, 0);
+
+      const band = new Graphics();
+      band.rect(-26, -16, 52, 5);
+      band.fill({ color: 0xf3f4f6 });
+      band.stroke({ width: 1.5, color: 0x111111 });
+      this.headContainer.addChild(band);
+    }
+  }
+
+  /**
+   * Dessine des cils féminins stylisés sur les yeux
+   */
+  private drawEyelashes() {
+    const eyelashes = new Graphics();
+    // Oeil gauche cils
+    eyelashes.moveTo(-16, -11);
+    eyelashes.lineTo(-21, -14);
+    eyelashes.moveTo(-16, -9);
+    eyelashes.lineTo(-22, -10);
+
+    // Oeil droit cils
+    eyelashes.moveTo(16, -11);
+    eyelashes.lineTo(21, -14);
+    eyelashes.moveTo(16, -9);
+    eyelashes.lineTo(22, -10);
+
+    eyelashes.stroke({ width: 1.5, color: 0x111111 });
+    this.headContainer.addChild(eyelashes);
   }
 
   /**
@@ -287,8 +450,50 @@ export class Fighter {
     this.container.x = this.x;
     this.container.y = this.y;
 
-    // Orienter le conteneur de la tête
-    this.headContainer.rotation = this.rotation;
+    // Décrémenter le timer de hit du spin
+    if (this.spinHitTimer > 0) {
+      this.spinHitTimer -= dt;
+    }
+
+    // Orienter le conteneur de la tête (Meriem tourne sur elle-même en spin, les autres font face à l'adversaire)
+    if (this.specialAttackType === 'spin' && this.state === 'punching') {
+      this.spinAngle += 0.45 * dt;
+      this.headContainer.rotation = this.spinAngle;
+      if (this.particles && Math.random() < 0.3 * dt) {
+        this.particles.emitDashDust(this.x, this.y, this.spinAngle);
+      }
+    } else {
+      this.headContainer.rotation = this.rotation;
+    }
+
+    // Générer des particules de flammes pour la charge de Kahina
+    if (this.config.id === 'kahina' && this.specialAttackType === 'slide' && this.state === 'punching') {
+      if (this.particles && Math.random() < 0.7 * dt) {
+        this.particles.emitFlameParticles(this.x, this.y);
+      }
+    }
+
+    // Mettre à jour le projectile de Lamine
+    if (this.activeProjectile && this.activeProjectile.active) {
+      this.activeProjectile.x += this.activeProjectile.vx * dt;
+      this.activeProjectile.y += this.activeProjectile.vy * dt;
+      this.activeProjectile.graphic.x = this.activeProjectile.x;
+      this.activeProjectile.graphic.y = this.activeProjectile.y;
+      this.activeProjectile.graphic.rotation += 0.25 * dt;
+
+      // Détruire si hors-limites
+      if (
+        this.activeProjectile.x < -50 || 
+        this.activeProjectile.x > 850 || 
+        this.activeProjectile.y < -50 || 
+        this.activeProjectile.y > 600
+      ) {
+        this.activeProjectile.active = false;
+        if (this.activeProjectile.graphic.parent) {
+          this.activeProjectile.graphic.parent.removeChild(this.activeProjectile.graphic);
+        }
+      }
+    }
 
     // Animer les yeux (les pupilles regardent l'adversaire de façon plus prononcée)
     this.animateEyes(opponentX, opponentY);
@@ -380,9 +585,31 @@ export class Fighter {
         }
       }
     } else if (this.specialAttackType === 'slide' && this.state === 'punching') {
-      // Glissade aplatie de Zouzou
+      // Glissade aplatie (Zouzou / Kahina)
       this.animScaleX = 1.45;
       this.animScaleY = 0.45;
+    } else if (this.specialAttackType === 'shockwave' && this.state === 'punching') {
+      // Yasmina : Onde de choc (gonfle)
+      if (this.stateTimer > 15) {
+        this.animScaleX = 1.4;
+        this.animScaleY = 1.4;
+      } else {
+        this.animScaleX = 0.85;
+        this.animScaleY = 0.85;
+      }
+    } else if (this.specialAttackType === 'projectile' && this.state === 'punching') {
+      // Lamine : Projection
+      if (this.stateTimer > 12) {
+        this.animScaleX = 0.95;
+        this.animScaleY = 1.1;
+      } else {
+        this.animScaleX = 1.2;
+        this.animScaleY = 0.8;
+      }
+    } else if (this.specialAttackType === 'spin' && this.state === 'punching') {
+      // Meriem : Tourbillon rotatif (centrifuge)
+      this.animScaleX = 1.15;
+      this.animScaleY = 1.15;
     } else if (this.state === 'dashing') {
       // S'étire dans le sens du mouvement rapide
       this.animScaleX = 1.35;
@@ -431,6 +658,31 @@ export class Fighter {
         targetLY = -10;
         targetRX = 8;
         targetRY = -10;
+      } else if (this.specialAttackType === 'shockwave') {
+        // Yasmina : Onde de choc (bras grands ouverts de puissance)
+        targetLX = -35;
+        targetLY = 0;
+        targetRX = 35;
+        targetRY = 0;
+      } else if (this.specialAttackType === 'projectile') {
+        // Lamine : Un bras recule puis lance
+        if (this.stateTimer > 12) {
+          targetLX = -24;
+          targetLY = -10;
+          targetRX = 15;
+          targetRY = 10; // Recul
+        } else {
+          targetLX = -24;
+          targetLY = -10;
+          targetRX = 20;
+          targetRY = -35; // Lancer
+        }
+      } else if (this.specialAttackType === 'spin') {
+        // Meriem : Tourbillon (bras grands ouverts)
+        targetLX = -38;
+        targetLY = 0;
+        targetRX = 38;
+        targetRY = 0;
       } else if (this.specialAttackType === 'combo') {
         // Combo de Momo : alterner le poing gauche et droit
         if (this.stateTimer > 16) {
@@ -623,6 +875,31 @@ export class Fighter {
    * @param opponent Combattant adverse
    */
   public checkHit(opponent: Fighter): boolean {
+    // 1. Projectile de Lamine en vol
+    if (this.activeProjectile && this.activeProjectile.active) {
+      const distProj = Math.hypot(opponent.x - this.activeProjectile.x, opponent.y - this.activeProjectile.y);
+      if (distProj < opponent.radius + 12) {
+        this.activeProjectile.active = false;
+        if (this.activeProjectile.graphic.parent) {
+          this.activeProjectile.graphic.parent.removeChild(this.activeProjectile.graphic);
+        }
+
+        const damage = 1.35 + (this.config.power * 0.05);
+        opponent.takeDamage(damage, this.rotation, true, 10, false, false);
+        opponent.state = 'stunned';
+        opponent.stateTimer = 60; // 1s stun
+        opponent.hitStunTimer = 50;
+
+        soundManager.play('block', { pan: (opponent.x - 400) / 400, pitchVariation: 0.3, volumeScale: 1.2 });
+        soundManager.play('punch_heavy', { pan: (opponent.x - 400) / 400, volumeScale: 0.8 });
+
+        if (this.particles) {
+          this.particles.emitGlassShards(this.activeProjectile.x, this.activeProjectile.y);
+          this.particles.emitHitSparks(this.activeProjectile.x, this.activeProjectile.y, this.rotation, true);
+        }
+      }
+    }
+
     if (this.state !== 'punching') return false;
     if (opponent.state === 'ko') return false;
 
@@ -650,6 +927,19 @@ export class Fighter {
       punchDist = 20;
       baseDamage = 1.1;
       kbForce = 22; // Très grand recul faucheur
+    } else if (this.specialAttackType === 'shockwave') {
+      // Yasmina : Onde de choc circulaire
+      isHitting = this.stateTimer >= 2 && this.stateTimer <= 12 && !this.hasHitThisState;
+      punchDist = 0; // Distance calculée directement
+      baseDamage = 1.4;
+      kbForce = 22;
+      ignoresBlock = true;
+    } else if (this.specialAttackType === 'spin') {
+      // Meriem : Tourbillon rotatif (hits multiples cadencés)
+      isHitting = this.stateTimer >= 5 && this.stateTimer <= 40 && this.spinHitTimer <= 0;
+      punchDist = 22;
+      baseDamage = 0.55;
+      kbForce = 5;
     } else if (this.specialAttackType === 'combo') {
       // Momo Combo : deux impacts distincts (frames 22-25 et 10-13)
       const firstHit = this.stateTimer >= 22 && this.stateTimer <= 25 && !this.hasHitFirstCombo;
@@ -682,9 +972,21 @@ export class Fighter {
     // Distance entre l'impact et l'adversaire
     const dist = Math.hypot(opponent.x - handX, opponent.y - handY);
 
-    if (dist < opponent.radius + 12) {
-      if (this.specialAttackType === 'headbutt' || this.specialAttackType === 'slide') {
+    let hitRadius = opponent.radius + 12;
+    if (this.specialAttackType === 'shockwave') {
+      hitRadius = 150; // Grande portée circulaire pour l'onde de choc
+    }
+
+    if (dist < hitRadius) {
+      if (
+        this.specialAttackType === 'headbutt' || 
+        this.specialAttackType === 'slide' || 
+        this.specialAttackType === 'shockwave'
+      ) {
         this.hasHitThisState = true;
+      }
+      if (this.specialAttackType === 'spin') {
+        this.spinHitTimer = 9.0; // Cadencer à 9 frames
       }
 
       // Calculer les dégâts
@@ -831,39 +1133,91 @@ export class Fighter {
       this.specialAttackType = 'headbutt';
       this.stateTimer = 45;
       this.punchCooldown = 55;
-      
-      // Reculer de quelques pixels pour l'élan initial
       this.vx = -Math.cos(this.rotation) * 3.5;
       this.vy = -Math.sin(this.rotation) * 3.5;
-      
       soundManager.play('fight', { pan: (this.x - 400) / 400, volumeScale: 1.2 });
     } else if (this.config.id === 'zouzou') {
       // Zouzou : Glissade basse faucheuse ultra-rapide
       this.specialAttackType = 'slide';
       this.stateTimer = 30;
       this.punchCooldown = 40;
-      
-      // Projection physique rapide vers l'avant
       const dashSpeed = 17.5;
       this.vx = Math.cos(this.rotation) * dashSpeed;
       this.vy = Math.sin(this.rotation) * dashSpeed;
-      
       soundManager.play('punch_heavy', { pan: (this.x - 400) / 400, volumeScale: 1.1 });
+    } else if (this.config.id === 'kahina') {
+      // Kahina : Charge enflammée féroce (réutilise 'slide' mais avec traînée de feu)
+      this.specialAttackType = 'slide';
+      this.stateTimer = 32;
+      this.punchCooldown = 42;
+      const dashSpeed = 20.0;
+      this.vx = Math.cos(this.rotation) * dashSpeed;
+      this.vy = Math.sin(this.rotation) * dashSpeed;
+      soundManager.play('punch_heavy', { pan: (this.x - 400) / 400, volumeScale: 1.3 });
+    } else if (this.config.id === 'yasmina') {
+      // Yasmina : Onde de choc défensive
+      this.specialAttackType = 'shockwave';
+      this.stateTimer = 26;
+      this.punchCooldown = 38;
+      this.vx = 0;
+      this.vy = 0;
+      soundManager.play('block', { pan: (this.x - 400) / 400, volumeScale: 1.2 });
+    } else if (this.config.id === 'lamine') {
+      // Lamine : Lancer de projectile (bouteille de verre)
+      this.specialAttackType = 'projectile';
+      this.stateTimer = 22;
+      this.punchCooldown = 35;
+      
+      const projGraphic = new Graphics();
+      projGraphic.rect(-4, -8, 8, 16);
+      projGraphic.fill({ color: 0x065f46 }); // Vert bouteille
+      projGraphic.stroke({ width: 1.5, color: 0x111111 });
+      projGraphic.rect(-2, -13, 4, 5);
+      projGraphic.fill({ color: 0x065f46 });
+      projGraphic.stroke({ width: 1.5, color: 0x111111 });
+      
+      if (this.container.parent) {
+        this.container.parent.addChild(projGraphic);
+      }
+      
+      const projSpeed = 16.0;
+      this.activeProjectile = {
+        x: this.x + Math.cos(this.rotation) * 35,
+        y: this.y + Math.sin(this.rotation) * 35,
+        vx: Math.cos(this.rotation) * projSpeed,
+        vy: Math.sin(this.rotation) * projSpeed,
+        active: true,
+        graphic: projGraphic
+      };
+      
+      projGraphic.x = this.activeProjectile.x;
+      projGraphic.y = this.activeProjectile.y;
+      projGraphic.rotation = this.rotation + Math.PI / 2;
+      
+      soundManager.play('countdown', { volumeScale: 0.8, pitchVariation: 0.1 });
+    } else if (this.config.id === 'meriem') {
+      // Meriem : Tourbillon rotatif
+      this.specialAttackType = 'spin';
+      this.stateTimer = 45;
+      this.punchCooldown = 55;
+      this.spinAngle = 0;
+      this.spinHitTimer = 0;
+      
+      const dashSpeed = 4.5;
+      this.vx = Math.cos(this.rotation) * dashSpeed;
+      this.vy = Math.sin(this.rotation) * dashSpeed;
+      soundManager.play('punch', { pan: (this.x - 400) / 400, volumeScale: 1.0, pitchVariation: 0.2 });
     } else {
-      // Momo (et autres par défaut) : Combo double coup de poing rapide (Jab-Cross)
+      // Momo : Combo Jab-Cross
       this.specialAttackType = 'combo';
       this.stateTimer = 32;
       this.punchCooldown = 45;
-      
-      // Petit dash avant
       const dashSpeed = 6.5;
       this.vx = Math.cos(this.rotation) * dashSpeed;
       this.vy = Math.sin(this.rotation) * dashSpeed;
-      
       soundManager.play('punch', { pan: (this.x - 400) / 400, volumeScale: 1.0, pitchVariation: 0.05 });
     }
 
-    // Effets visuels de Super
     if (this.particles) {
       this.particles.emitHitSparks(this.x, this.y, this.rotation, true);
       this.particles.emitDashDust(this.x, this.y, this.rotation);
@@ -905,6 +1259,15 @@ export class Fighter {
     this.headContainer.scale.set(1.0);
     this.headContainer.rotation = 0;
     this.clearWeapon();
+
+    // Nettoyer le projectile de Lamine
+    if (this.activeProjectile) {
+      this.activeProjectile.active = false;
+      if (this.activeProjectile.graphic.parent) {
+        this.activeProjectile.graphic.parent.removeChild(this.activeProjectile.graphic);
+      }
+      this.activeProjectile = null;
+    }
   }
 
   /**

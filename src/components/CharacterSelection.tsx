@@ -62,6 +62,58 @@ export const CHARACTERS: Character[] = [
     defense: 2.5,
     description: 'Le combattant polyvalent par excellence. Des statistiques équilibrées pour toutes les situations.',
   },
+  {
+    id: 'kahina',
+    name: 'Kahina la Lionne',
+    color: 0xf97316, // Orange
+    colorHex: '#f97316',
+    gloveColor: 0xef4444, // Rouge
+    gloveColorHex: '#ef4444',
+    maxHp: 90,
+    speed: 4.5,
+    power: 9,
+    defense: 1.5,
+    description: 'Style Berserker. Extrêmement rapide et puissante lors de ses assauts, mais très sensible aux contres.',
+  },
+  {
+    id: 'yasmina',
+    name: 'Yasmina la Rose',
+    color: 0xdb2777, // Rose fuchsia
+    colorHex: '#db2777',
+    gloveColor: 0xf472b6, // Rose clair
+    gloveColorHex: '#f472b6',
+    maxHp: 95,
+    speed: 4.8,
+    power: 6,
+    defense: 4.5,
+    description: 'Spécialiste de la parade et du contre. Elle attend le bon moment pour relâcher sa fureur défensive.',
+  },
+  {
+    id: 'lamine',
+    name: 'Lamine le Rusé',
+    color: 0x10b981, // Vert émeraude
+    colorHex: '#10b981',
+    gloveColor: 0xfb923c, // Orange clair
+    gloveColorHex: '#fb923c',
+    maxHp: 105,
+    speed: 4.6,
+    power: 6.5,
+    defense: 3,
+    description: 'Combattant technique et imprévisible. Adore harceler à distance avec ses lancers d\'objets sournois.',
+  },
+  {
+    id: 'meriem',
+    name: 'Meriem la Tempête',
+    color: 0x38bdf8, // Bleu ciel
+    colorHex: '#38bdf8',
+    gloveColor: 0x7c3aed, // Violet
+    gloveColorHex: '#7c3aed',
+    maxHp: 100,
+    speed: 5.2,
+    power: 5.5,
+    defense: 3.5,
+    description: 'Virevolte de part et d\'autre de l\'arène. Son style aérien et ses enchaînements rapides tourmentent ses adversaires.',
+  }
 ];
 
 interface CharacterSelectionProps {

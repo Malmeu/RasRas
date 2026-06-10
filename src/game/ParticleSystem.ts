@@ -17,7 +17,7 @@ interface Particle {
   color: number;
   life: number;
   maxLife: number;
-  type: 'dust' | 'spark' | 'star' | 'block';
+  type: 'dust' | 'spark' | 'star' | 'block' | 'flame' | 'glass';
   rotationSpeed?: number;
 }
 
@@ -51,12 +51,18 @@ export class ParticleSystem {
       p.y += p.vy * dt;
 
       // Friction selon le type
-      if (p.type === 'dust') {
+      if (p.type === 'dust' || p.type === 'flame') {
         p.vx *= Math.pow(0.92, dt);
         p.vy *= Math.pow(0.92, dt);
-      } else if (p.type === 'spark' || p.type === 'block') {
+        if (p.type === 'flame') {
+          p.vy -= 0.14 * dt; // Les flammes montent
+        }
+      } else if (p.type === 'spark' || p.type === 'block' || p.type === 'glass') {
         p.vx *= Math.pow(0.96, dt);
         p.vy *= Math.pow(0.96, dt);
+        if (p.type === 'glass') {
+          p.vy += 0.22 * dt; // Gravité sur les éclats de verre
+        }
       }
 
       // Gravité sur certaines particules
@@ -73,7 +79,7 @@ export class ParticleSystem {
       p.graphic.alpha = p.life / p.maxLife;
 
       const progress = p.life / p.maxLife;
-      if (p.type === 'dust') {
+      if (p.type === 'dust' || p.type === 'flame' || p.type === 'glass') {
         p.graphic.scale.set(p.scale * progress);
       } else {
         p.graphic.scale.set(p.scale);
@@ -328,6 +334,78 @@ export class ParticleSystem {
         life: 35 + Math.random() * 15,
         maxLife: 50,
         type: 'dust',
+      };
+
+      this.container.addChild(graphic);
+      this.particles.push(p);
+    }
+  }
+
+  /**
+   * Émet des particules de flammes pour la charge de Kahina
+   */
+  public emitFlameParticles(x: number, y: number) {
+    const count = 3;
+    const colors = [0xff4500, 0xff8c00, 0xffd700]; // Orange-Rouge, Orange foncé, Jaune d'or
+    for (let i = 0; i < count; i++) {
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const graphic = new Graphics();
+      graphic.circle(0, 0, 4 + Math.random() * 5);
+      graphic.fill({ color, alpha: 0.8 });
+
+      const scatterAngle = -Math.PI / 2 + (Math.random() - 0.5) * 0.9;
+      const speed = 1.0 + Math.random() * 2.0;
+
+      const p: Particle = {
+        graphic,
+        x: x + (Math.random() - 0.5) * 16,
+        y: y + (Math.random() - 0.5) * 16,
+        vx: Math.cos(scatterAngle) * speed,
+        vy: Math.sin(scatterAngle) * speed,
+        alpha: 0.8,
+        scale: 1,
+        color,
+        life: 10 + Math.random() * 10,
+        maxLife: 20,
+        type: 'flame',
+      };
+
+      this.container.addChild(graphic);
+      this.particles.push(p);
+    }
+  }
+
+  /**
+   * Émet des éclats de verre lorsque le projectile de Lamine se brise
+   */
+  public emitGlassShards(x: number, y: number) {
+    const count = 15;
+    const color = 0x34d399; // Émeraude translucide
+    for (let i = 0; i < count; i++) {
+      const graphic = new Graphics();
+      graphic.moveTo(0, -4);
+      graphic.lineTo(3, 3);
+      graphic.lineTo(-3, 3);
+      graphic.closePath();
+      graphic.fill({ color, alpha: 0.75 });
+      graphic.stroke({ width: 0.8, color: 0xffffff, alpha: 0.4 });
+
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 2.5 + Math.random() * 5.0;
+
+      const p: Particle = {
+        graphic,
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        alpha: 0.8,
+        scale: 0.8 + Math.random() * 0.5,
+        color,
+        life: 15 + Math.random() * 15,
+        maxLife: 30,
+        type: 'glass',
+        rotationSpeed: (Math.random() - 0.5) * 0.4,
       };
 
       this.container.addChild(graphic);
