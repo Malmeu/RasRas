@@ -1,11 +1,12 @@
 /**
  * StageSelection.tsx
- * Composant de sélection de l'arène de combat (Stage).
- * Offre un design arcade premium avec previews géantes et effets néon.
+ * Composant simplifié et robuste de sélection de l'arène.
+ * Affiche les 3 arènes côte à côte sous forme de cartes claires et sélectionnables.
+ * Utilise uniquement les classes de index.css et des styles inline pour éviter les bugs CSS.
  */
 
 import React, { useState } from 'react';
-import { ArrowLeft, Swords, MapPin } from 'lucide-react';
+import { ArrowLeft, Swords } from 'lucide-react';
 import { soundManager } from '../game/SoundManager';
 
 export interface Stage {
@@ -19,19 +20,19 @@ export const STAGES: Stage[] = [
   {
     id: 'el_ring',
     name: 'El Ring',
-    description: 'Le ring de combat classique sous les projecteurs, entouré de supporters en effervescence.',
+    description: 'Le ring de combat classique entouré de supporters passionnés.',
     imagePath: '/assets/images/ring_background.png'
   },
   {
     id: 'el_houma',
     name: 'El Houma',
-    description: 'Un quartier populaire d\'Alger avec son architecture traditionnelle, ses balcons colorés et son ambiance chaleureuse.',
+    description: 'Un quartier traditionnel d\'Alger sous le coucher de soleil.',
     imagePath: '/assets/images/el_houma_background.png'
   },
   {
     id: 'la_plage',
     name: 'La Plage',
-    description: 'Une plage de sable fin sous un coucher de soleil méditerranéen envoûtant, bercée par des vagues calmes et un feu de camp.',
+    description: 'Une plage de sable fin bercée par un feu de camp de nuit.',
     imagePath: '/assets/images/la_plage_background.png'
   }
 ];
@@ -47,7 +48,7 @@ export const StageSelection: React.FC<StageSelectionProps> = ({ onBack, onStageS
   const handleSelect = (stage: Stage) => {
     if (stage.id !== selectedStage.id) {
       setSelectedStage(stage);
-      soundManager.play('countdown', { volumeScale: 0.3, pitchVariation: 0.05 });
+      soundManager.play('punch', { pitchVariation: 0.1 });
     }
   };
 
@@ -61,120 +62,140 @@ export const StageSelection: React.FC<StageSelectionProps> = ({ onBack, onStageS
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen w-full bg-slate-950 text-white overflow-hidden p-4">
-      {/* Conteneur principal 16:9 arcade */}
+    <div 
+      className="flex flex-col items-center justify-between min-h-screen text-white p-4 relative overflow-hidden bg-slate-950" 
+      style={{ backgroundImage: 'radial-gradient(circle at bottom, var(--bg-purple-950) 0%, var(--bg-slate-950) 100%)' }}
+    >
+      {/* Grille de fond décorative */}
       <div 
-        className="relative flex flex-col justify-between w-full max-w-4xl p-6 rounded-3xl bg-slate-900-60 border border-white-10 backdrop-blur-xl shadow-box-menu"
-        style={{
-          aspectRatio: '16 / 9',
-          minHeight: '480px'
-        }}
+        className="absolute inset-0 pointer-events-none opacity-20" 
+        style={{ 
+          backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)', 
+          backgroundSize: '30px 30px' 
+        }} 
+      />
+
+      {/* Barre supérieure : Bouton Retour et Titre */}
+      <div className="w-full flex items-center justify-between relative z-10 mb-4" style={{ maxWidth: '900px' }}>
+        <button
+          onClick={onBack}
+          onMouseEnter={playHoverSound}
+          className="flex items-center gap-1-5 py-1-5 px-3 rounded-xl bg-white-5 hover-scale-102 active-scale-98 transition-all duration-200 text-zinc-300 font-bold uppercase tracking-wider text-xs border"
+        >
+          <ArrowLeft size={14} />
+          Retour
+        </button>
+        
+        <h2 
+          className="text-xl font-black uppercase tracking-widest"
+          style={{ 
+            background: 'linear-gradient(to right, var(--pink-400), var(--red-400))', 
+            WebkitBackgroundClip: 'text', 
+            WebkitTextFillColor: 'transparent' 
+          }}
+        >
+          Sélection de l'Arène
+        </h2>
+        
+        {/* Équilibreur visuel pour le titre centré */}
+        <div style={{ width: '85px' }} />
+      </div>
+
+      {/* Liste des 3 Arènes côte à côte */}
+      <div 
+        className="grid grid-cols-3 gap-4 relative z-10 w-full"
+        style={{ maxWidth: '900px', margin: 'auto 0' }}
       >
-        {/* En-tête */}
-        <div className="flex items-center justify-between w-full border-b border-white-10 pb-3">
-          <button
-            onClick={onBack}
-            onMouseEnter={playHoverSound}
-            className="flex items-center gap-2 py-1.5 px-3.5 rounded-xl bg-white-5 hover:bg-white-10 border border-white-10 text-zinc-300 hover:text-white text-xs font-bold uppercase tracking-wider transition-all duration-200 active-scale-98"
-          >
-            <ArrowLeft size={14} />
-            Retour
-          </button>
-          
-          <h2 className="text-xl md:text-2xl font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-red-400 select-none animate-pulse">
-            Sélection de l'Arène
-          </h2>
-          
-          <div className="w-[85px] hidden md:block" /> {/* Équilibreur visuel */}
-        </div>
-
-        {/* Corps de sélection (Grid à 2 colonnes) */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 flex-1 my-4 overflow-hidden">
-          {/* Colonne gauche (Cartes des arènes) */}
-          <div className="md:col-span-2 flex flex-col gap-2.5 justify-center overflow-y-auto pr-1">
-            {STAGES.map((stage) => {
-              const isSelected = stage.id === selectedStage.id;
-              return (
-                <button
-                  key={stage.id}
-                  onClick={() => handleSelect(stage)}
-                  onMouseEnter={playHoverSound}
-                  className={`relative flex items-center gap-3 p-3 rounded-2xl border text-left transition-all duration-300 hover-scale-102 ${
-                    isSelected 
-                      ? 'border-pink-500 text-white shadow-[0_0_15px_rgba(219,39,119,0.25)]' 
-                      : 'bg-white-5 border-white-5 text-zinc-400 hover:text-zinc-200'
-                  }`}
-                  style={isSelected ? {
-                    background: 'linear-gradient(to right, rgba(219, 39, 119, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)'
-                  } : {}}
-                >
-                  {/* Miniature ou indicateur */}
-                  <div className={`w-12 h-12 rounded-lg overflow-hidden border ${isSelected ? 'border-pink-400' : 'border-white-10'}`}>
-                    <img 
-                      src={stage.imagePath} 
-                      alt={stage.name} 
-                      className="w-full h-full object-cover"
-                    />
+        {STAGES.map((stage) => {
+          const isSelected = stage.id === selectedStage.id;
+          return (
+            <button
+              key={stage.id}
+              onClick={() => handleSelect(stage)}
+              onMouseEnter={playHoverSound}
+              className="flex flex-col rounded-2xl border transition-all duration-300 relative hover-scale-102 text-left"
+              style={{
+                borderColor: isSelected ? 'var(--pink-500)' : 'var(--border-white-10)',
+                boxShadow: isSelected ? '0 0 25px rgba(236, 72, 153, 0.4)' : 'none',
+                backgroundColor: isSelected ? 'var(--bg-slate-900)' : 'rgba(15, 15, 22, 0.4)',
+                cursor: 'pointer',
+                overflow: 'hidden'
+              }}
+            >
+              {/* Image d'aperçu de l'arène */}
+              <div style={{ height: '180px', overflow: 'hidden', position: 'relative' }}>
+                <img 
+                  src={stage.imagePath} 
+                  alt={stage.name} 
+                  className="w-full h-full"
+                  style={{ 
+                    objectFit: 'cover',
+                    transition: 'transform 0.5s ease',
+                    transform: isSelected ? 'scale(1.05)' : 'scale(1.0)'
+                  }}
+                />
+                
+                {/* Dégradé sur l'image */}
+                <div 
+                  className="absolute inset-0" 
+                  style={{ background: 'linear-gradient(to top, rgba(15, 15, 22, 0.95) 0%, rgba(15, 15, 22, 0.2) 60%, transparent 100%)' }} 
+                />
+                
+                {/* Badge Sélectionné */}
+                {isSelected && (
+                  <div 
+                    className="absolute font-black uppercase tracking-wider text-white text-9px rounded px-2 py-1"
+                    style={{ 
+                      top: '12px', 
+                      right: '12px', 
+                      backgroundColor: 'var(--pink-600)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.5)'
+                    }}
+                  >
+                    Actif
                   </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-black uppercase tracking-wider">{stage.name}</h3>
-                    <p className="text-[10px] text-zinc-400 truncate mt-0.5">{stage.description}</p>
-                  </div>
+                )}
+              </div>
 
-                  {isSelected && (
-                    <div className="absolute top-2 right-2 bg-pink-600 rounded-full p-0.5 animate-bounce">
-                      <MapPin size={10} className="text-white" />
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+              {/* Contenu textuel descriptif */}
+              <div className="p-4 flex flex-col justify-between flex-1" style={{ minHeight: '120px' }}>
+                <div>
+                  <h3 
+                    className="text-sm font-black uppercase tracking-wider"
+                    style={{ color: isSelected ? '#ffffff' : 'var(--zinc-300)' }}
+                  >
+                    {stage.name}
+                  </h3>
+                  <p 
+                    className="text-xs mt-2"
+                    style={{ color: 'var(--zinc-400)', lineHeight: '1.4' }}
+                  >
+                    {stage.description}
+                  </p>
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
 
-          {/* Colonne droite (Grand Preview & Description) */}
-          <div className="md:col-span-3 flex flex-col rounded-2xl border border-white-10 overflow-hidden bg-slate-950-40 relative group">
-            {/* Image de Preview géante */}
-            <div className="flex-1 relative overflow-hidden">
-              <img 
-                src={selectedStage.imagePath} 
-                alt={selectedStage.name} 
-                className="w-full h-full object-cover transition-transform duration-700 scale-102 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950-30 to-transparent" />
-            </div>
-
-            {/* Infos Arène */}
-            <div className="p-4 bg-slate-950-80 backdrop-blur-md border-t border-white-5 relative z-10">
-              <span className="text-[9px] font-black uppercase tracking-widest text-pink-400 bg-pink-500-10 border border-pink-500-20 px-2 py-0.5 rounded">
-                Arène Sélectionnée
-              </span>
-              <h3 className="text-lg font-black uppercase tracking-wider text-white mt-1.5 flex items-center gap-1.5">
-                {selectedStage.name}
-              </h3>
-              <p className="text-xs text-zinc-400 leading-relaxed mt-1">
-                {selectedStage.description}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Pied de page & Lancement */}
-        <div className="flex justify-end border-t border-white-10 pt-3">
-          <button
-            onClick={handleConfirm}
-            onMouseEnter={playHoverSound}
-            className="flex items-center justify-center gap-2 py-3 px-8 rounded-2xl text-white font-black text-sm uppercase tracking-widest transition-all duration-300 hover-scale-102 active-scale-98 border border-white-10"
-            style={{
-              background: 'linear-gradient(to right, var(--pink-500), var(--red-500))',
-              boxShadow: '0 6px 20px rgba(239, 68, 68, 0.25)'
-            }}
-          >
-            <Swords size={16} />
-            Lancer le combat
-          </button>
-        </div>
+      {/* Zone de validation en bas */}
+      <div className="w-full flex justify-center relative z-10 mt-6" style={{ maxWidth: '900px' }}>
+        <button
+          onClick={handleConfirm}
+          onMouseEnter={playHoverSound}
+          className="flex items-center justify-center gap-2 py-3 px-8 rounded-xl text-white font-black text-sm uppercase tracking-widest transition-all duration-200 hover-scale-102 active-scale-98"
+          style={{
+            background: 'linear-gradient(to right, var(--pink-500), var(--red-500))',
+            boxShadow: '0 6px 20px rgba(239, 68, 68, 0.35)',
+            cursor: 'pointer'
+          }}
+        >
+          <Swords size={16} />
+          Lancer le combat
+        </button>
       </div>
     </div>
   );
 };
+
