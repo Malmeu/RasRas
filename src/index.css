@@ -445,8 +445,8 @@ button:hover {
   user-select: none;
   display: flex;
   justify-content: space-between;
-  align-items: center; /* Centrer verticalement au milieu de l'arène */
-  padding: 1.5rem 2.5rem; /* Marges pour éviter l'encoche et les bords incurvés */
+  align-items: flex-end; /* Placer en bas sous le ring */
+  padding: 1.5rem 2.5rem 2rem 2.5rem; /* Marges confortables pour les pouces */
   z-index: 100; /* Assure que c'est bien au-dessus de PixiJS (z-index 1) et de la pause (z-index 40) */
   touch-action: none;
 }

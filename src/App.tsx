@@ -431,7 +431,7 @@ function App() {
                   onPointerDown={handleJoystickDown}
                   onPointerMove={handleJoystickMove}
                   onPointerUp={handleJoystickUp}
-                  onPointerLeave={handleJoystickUp}
+                  onPointerCancel={handleJoystickUp}
                 >
                   <div 
                     className="mobile-joystick-handle"
