@@ -226,7 +226,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       }
 
       // 3. Charger et dessiner l'image de fond du stage
-      const stageImagePath = stage?.imagePath || '/assets/images/ring_background.png';
+      const stageImagePath = stage?.imagePath || 'assets/images/ring_background.png';
       const bgTexture = await Assets.load(stageImagePath);
       if (!active) {
         try {
@@ -1619,7 +1619,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       
       // Décharger la texture pour éviter les conflits de cache WebGL
       try {
-        const stageImagePath = stage?.imagePath || '/assets/images/ring_background.png';
+        const stageImagePath = stage?.imagePath || 'assets/images/ring_background.png';
         Assets.unload(stageImagePath);
       } catch (e) {}
       

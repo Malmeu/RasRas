@@ -86,7 +86,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStartGame }) => {
         style={{
           width: 'min(100vw, 100vh)',
           height: 'min(100vw, 100vh)',
-          backgroundImage: 'url("/assets/images/main.jpeg")',
+          backgroundImage: 'url("assets/images/main.jpeg")',
           backgroundSize: '100% 100%',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',

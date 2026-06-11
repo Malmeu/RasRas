@@ -21,19 +21,19 @@ export const STAGES: Stage[] = [
     id: 'el_ring',
     name: 'El Ring',
     description: 'Le ring de combat classique entouré de supporters passionnés.',
-    imagePath: '/assets/images/ring_background.png'
+    imagePath: 'assets/images/ring_background.png'
   },
   {
     id: 'el_houma',
     name: 'El Houma',
     description: 'Un quartier traditionnel d\'Alger sous le coucher de soleil.',
-    imagePath: '/assets/images/el_houma_background.png'
+    imagePath: 'assets/images/el_houma_background.png'
   },
   {
     id: 'la_plage',
     name: 'La Plage',
     description: 'Une plage de sable fin bercée par un feu de camp de nuit.',
-    imagePath: '/assets/images/la_plage_background.png'
+    imagePath: 'assets/images/la_plage_background.png'
   }
 ];
 

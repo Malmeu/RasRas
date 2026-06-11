@@ -16,17 +16,17 @@ class SoundManager {
   private bgmVolume: number = 0.5;
 
   private soundPaths: Record<string, string> = {
-    punch: '/assets/sounds/punch.mp3',
-    punch_heavy: '/assets/sounds/punch_heavy.mp3',
-    dash: '/assets/sounds/dash.mp3',
-    hit: '/assets/sounds/hit.mp3',
-    block: '/assets/sounds/block.mp3',
-    ko: '/assets/sounds/ko.mp3',
-    cheer: '/assets/sounds/cheer.mp3',
-    countdown: '/assets/sounds/countdown.mp3',
-    fight: '/assets/sounds/fight.mp3',
-    bgm: '/assets/sounds/ambiance.mp3',
-    final: '/assets/sounds/final.mp3',
+    punch: 'assets/sounds/punch.mp3',
+    punch_heavy: 'assets/sounds/punch_heavy.mp3',
+    dash: 'assets/sounds/dash.mp3',
+    hit: 'assets/sounds/hit.mp3',
+    block: 'assets/sounds/block.mp3',
+    ko: 'assets/sounds/ko.mp3',
+    cheer: 'assets/sounds/cheer.mp3',
+    countdown: 'assets/sounds/countdown.mp3',
+    fight: 'assets/sounds/fight.mp3',
+    bgm: 'assets/sounds/ambiance.mp3',
+    final: 'assets/sounds/final.mp3',
   };
 
   constructor() {
