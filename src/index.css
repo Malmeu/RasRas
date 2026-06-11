@@ -41,7 +41,7 @@
   padding: 0;
 }
 
-body {
+html, body, #root {
   font-family: var(--font-sans);
   background-color: var(--bg-slate-950);
   color: #ffffff;
@@ -52,6 +52,7 @@ body {
   width: 100%;
   height: 100%;
   touch-action: none;
+  overscroll-behavior: none;
 }
 
 /* 2. Utilitaires de Layout (Flexbox & Grid) */
@@ -439,14 +440,19 @@ button:hover {
 /* --- CONTRÔLES TACTILES MOBILES (PREMIUM DESIGN) --- */
 
 .mobile-controls-overlay {
-  position: fixed; /* Fixé aux bords physiques de l'écran du téléphone */
-  inset: 0;
+  position: absolute; /* Positionné par rapport au conteneur parent */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 120px;
+  background-color: rgba(9, 9, 14, 0.9); /* Fond très sombre premium */
+  border-top: 1.5px solid rgba(236, 72, 153, 0.25); /* Ligne de démarcation rose */
   pointer-events: none;
   user-select: none;
   display: flex;
   justify-content: space-between;
-  align-items: flex-end; /* Placer en bas sous le ring */
-  padding: 1.5rem 2.5rem 2rem 2.5rem; /* Marges confortables pour les pouces */
+  align-items: center; /* Centré verticalement dans la barre */
+  padding: 0.5rem 1.5rem; /* Padding ergonomique */
   z-index: 100; /* Assure que c'est bien au-dessus de PixiJS (z-index 1) et de la pause (z-index 40) */
   touch-action: none;
 }
@@ -456,41 +462,41 @@ button:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 96px;
-  height: 96px;
+  width: 90px;
+  height: 90px;
   margin-left: 0.5rem;
-  opacity: 0.65;
+  opacity: 0.8;
   transition: opacity 0.2s ease;
   touch-action: none;
 }
 
 .mobile-joystick-container:active, 
 .mobile-joystick-container.active {
-  opacity: 0.95;
+  opacity: 0.98;
 }
 
 .mobile-joystick-base {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background-color: rgba(15, 15, 22, 0.4);
-  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  background-color: rgba(15, 15, 22, 0.5);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   touch-action: none;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.6), inset 0 0 10px rgba(0, 0, 0, 0.8);
 }
 
 .mobile-joystick-handle {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: linear-gradient(135deg, #ec4899 0%, #ef4444 100%);
   position: absolute;
   cursor: pointer;
-  box-shadow: 0 0 12px #ec4899, inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 12px rgba(236, 72, 153, 0.8), inset 0 -2px 4px rgba(0, 0, 0, 0.3);
   touch-action: none;
 }
 
@@ -498,9 +504,9 @@ button:hover {
   pointer-events: auto;
   display: flex;
   gap: 0.75rem;
-  align-items: center; /* Centrer verticalement au milieu de l'arène */
+  align-items: center;
   margin-right: 0.5rem;
-  opacity: 0.75;
+  opacity: 0.85;
   transition: opacity 0.2s ease;
   touch-action: none;
 }

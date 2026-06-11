@@ -104,39 +104,77 @@ function App() {
     inputManager.virtualInputs.down = targetY > deadzone;
   };
 
-  const handleJoystickDown = (e: React.PointerEvent<HTMLDivElement>) => {
+  const joystickTouchId = useRef<number | null>(null);
+
+  const handleJoystickTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (joystickTouchId.current !== null) return;
+    const touch = e.changedTouches[0];
+    joystickTouchId.current = touch.identifier;
     setIsJoystickActive(true);
+    
     const rect = e.currentTarget.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
     joystickStartPos.current = { x: centerX, y: centerY };
     
-    const dx = e.clientX - centerX;
-    const dy = e.clientY - centerY;
+    const dx = touch.clientX - centerX;
+    const dy = touch.clientY - centerY;
     updateJoystickPosition(dx, dy);
     
-    e.currentTarget.setPointerCapture(e.pointerId);
+    if (e.cancelable) e.preventDefault();
   };
 
-  const handleJoystickMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isJoystickActive) return;
-    const dx = e.clientX - joystickStartPos.current.x;
-    const dy = e.clientY - joystickStartPos.current.y;
-    updateJoystickPosition(dx, dy);
+  const handleJoystickTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (joystickTouchId.current === null) return;
+    
+    let touch: React.Touch | null = null;
+    for (let i = 0; i < e.touches.length; i++) {
+      if (e.touches[i].identifier === joystickTouchId.current) {
+        touch = e.touches[i];
+        break;
+      }
+    }
+    
+    if (touch) {
+      const dx = touch.clientX - joystickStartPos.current.x;
+      const dy = touch.clientY - joystickStartPos.current.y;
+      updateJoystickPosition(dx, dy);
+    }
+    
+    if (e.cancelable) e.preventDefault();
   };
 
-  const handleJoystickUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    setIsJoystickActive(false);
-    setJoystickOffset({ x: 0, y: 0 });
+  const handleJoystickTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (joystickTouchId.current === null) return;
     
-    inputManager.virtualInputs.left = false;
-    inputManager.virtualInputs.right = false;
-    inputManager.virtualInputs.up = false;
-    inputManager.virtualInputs.down = false;
+    let hasEnded = false;
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      if (e.changedTouches[i].identifier === joystickTouchId.current) {
+        hasEnded = true;
+        break;
+      }
+    }
     
-    try {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    } catch (err) {}
+    if (hasEnded) {
+      joystickTouchId.current = null;
+      setIsJoystickActive(false);
+      setJoystickOffset({ x: 0, y: 0 });
+      
+      inputManager.virtualInputs.left = false;
+      inputManager.virtualInputs.right = false;
+      inputManager.virtualInputs.up = false;
+      inputManager.virtualInputs.down = false;
+    }
+  };
+
+  const handleActionTouchStart = (action: 'block' | 'dash' | 'super' | 'punch', e: React.TouchEvent) => {
+    inputManager.virtualInputs[action] = true;
+    if (e.cancelable) e.preventDefault();
+  };
+
+  const handleActionTouchEnd = (action: 'block' | 'dash' | 'super' | 'punch', e: React.TouchEvent) => {
+    inputManager.virtualInputs[action] = false;
+    if (e.cancelable) e.preventDefault();
   };
 
   // Initialise le jeu après sélection du mode
@@ -326,11 +364,11 @@ function App() {
           <div 
             className={showMobileControls ? "mobile-arena-container" : "desktop-arena-container"}
             style={showMobileControls ? {
-              position: 'fixed',
+              position: 'absolute',
               top: 0,
               left: 0,
-              width: '100vw',
-              height: '100vh',
+              width: '100%',
+              height: 'calc(100% - 120px)',
               overflow: 'hidden',
               backgroundColor: '#0c0c14',
               zIndex: 20
@@ -428,10 +466,10 @@ function App() {
               <div className={`mobile-joystick-container ${isJoystickActive ? 'active' : ''}`}>
                 <div 
                   className="mobile-joystick-base"
-                  onPointerDown={handleJoystickDown}
-                  onPointerMove={handleJoystickMove}
-                  onPointerUp={handleJoystickUp}
-                  onPointerCancel={handleJoystickUp}
+                  onTouchStart={handleJoystickTouchStart}
+                  onTouchMove={handleJoystickTouchMove}
+                  onTouchEnd={handleJoystickTouchEnd}
+                  onTouchCancel={handleJoystickTouchEnd}
                 >
                   <div 
                     className="mobile-joystick-handle"
@@ -448,9 +486,9 @@ function App() {
                 {/* Parade */}
                 <button
                   className="mobile-action-btn mobile-btn-block"
-                  onPointerDown={() => { inputManager.virtualInputs.block = true; }}
-                  onPointerUp={() => { inputManager.virtualInputs.block = false; }}
-                  onPointerLeave={() => { inputManager.virtualInputs.block = false; }}
+                  onTouchStart={(e) => handleActionTouchStart('block', e)}
+                  onTouchEnd={(e) => handleActionTouchEnd('block', e)}
+                  onTouchCancel={(e) => handleActionTouchEnd('block', e)}
                 >
                   Parer
                 </button>
@@ -458,9 +496,9 @@ function App() {
                 {/* Esquive */}
                 <button
                   className="mobile-action-btn mobile-btn-dash"
-                  onPointerDown={() => { inputManager.virtualInputs.dash = true; }}
-                  onPointerUp={() => { inputManager.virtualInputs.dash = false; }}
-                  onPointerLeave={() => { inputManager.virtualInputs.dash = false; }}
+                  onTouchStart={(e) => handleActionTouchStart('dash', e)}
+                  onTouchEnd={(e) => handleActionTouchEnd('dash', e)}
+                  onTouchCancel={(e) => handleActionTouchEnd('dash', e)}
                 >
                   Dash
                 </button>
@@ -469,9 +507,9 @@ function App() {
                 {liveData.p1Rage >= 100 && (
                   <button
                     className="mobile-action-btn animate-pulse"
-                    onPointerDown={() => { inputManager.virtualInputs.super = true; }}
-                    onPointerUp={() => { inputManager.virtualInputs.super = false; }}
-                    onPointerLeave={() => { inputManager.virtualInputs.super = false; }}
+                    onTouchStart={(e) => handleActionTouchStart('super', e)}
+                    onTouchEnd={(e) => handleActionTouchEnd('super', e)}
+                    onTouchCancel={(e) => handleActionTouchEnd('super', e)}
                     style={{
                       width: '58px',
                       height: '58px',
@@ -489,9 +527,9 @@ function App() {
                 {/* Frappe */}
                 <button
                   className="mobile-action-btn mobile-btn-punch"
-                  onPointerDown={() => { inputManager.virtualInputs.punch = true; }}
-                  onPointerUp={() => { inputManager.virtualInputs.punch = false; }}
-                  onPointerLeave={() => { inputManager.virtualInputs.punch = false; }}
+                  onTouchStart={(e) => handleActionTouchStart('punch', e)}
+                  onTouchEnd={(e) => handleActionTouchEnd('punch', e)}
+                  onTouchCancel={(e) => handleActionTouchEnd('punch', e)}
                 >
                   Punch
                 </button>

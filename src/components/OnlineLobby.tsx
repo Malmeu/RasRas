@@ -25,6 +25,14 @@ export const OnlineLobby: React.FC<OnlineLobbyProps> = ({ onBack, onGameStart })
   const [roomCodeInput, setRoomCodeInput] = useState('');
   const [currentRoomCode, setCurrentRoomCode] = useState('');
   const roomCodeRef = useRef('');
+  const [serverUrl, setServerUrl] = useState(() => {
+    const saved = localStorage.getItem('rasras_server_url');
+    if (saved) return saved;
+    if (window.location.hostname === 'localhost') {
+      return 'http://localhost:3001';
+    }
+    return '';
+  });
 
   const updateRoomCode = (code: string) => {
     setCurrentRoomCode(code);
@@ -49,9 +57,12 @@ export const OnlineLobby: React.FC<OnlineLobbyProps> = ({ onBack, onGameStart })
     setErrorMsg('');
 
     // Détecter l'adresse de connexion en développement vs production
-    const socketUrl = window.location.hostname === 'localhost' 
-      ? 'http://localhost:3001' 
-      : window.location.origin;
+    let socketUrl = serverUrl.trim();
+    if (!socketUrl) {
+      // Détection automatique s'il s'agit d'itch.io ou non
+      const isItch = window.location.hostname.includes('itch.io') || window.location.hostname.includes('hwcdn.net');
+      socketUrl = isItch ? 'https://rasras-server.onrender.com' : window.location.origin;
+    }
 
     const newSocket = io(socketUrl, {
       transports: ['websocket'],
@@ -59,16 +70,17 @@ export const OnlineLobby: React.FC<OnlineLobbyProps> = ({ onBack, onGameStart })
     });
 
     newSocket.on('connect', () => {
-      console.log('[Socket] Connecté au serveur');
+      console.log('[Socket] Connecté au serveur : ' + socketUrl);
       setSocket(newSocket);
       setConnecting(false);
       setLobbyState('menu');
+      localStorage.setItem('rasras_server_url', serverUrl); // Mémoriser l'URL entrée par l'utilisateur
       soundManager.play('cheer', { volumeScale: 0.15 });
     });
 
     newSocket.on('connect_error', () => {
       setConnecting(false);
-      setErrorMsg('Impossible de se connecter au serveur de jeu.');
+      setErrorMsg(`Impossible de se connecter au serveur à l'adresse : ${socketUrl}`);
       newSocket.close();
     });
 
@@ -221,6 +233,21 @@ export const OnlineLobby: React.FC<OnlineLobbyProps> = ({ onBack, onGameStart })
                 className="py-3.5 px-4 rounded-xl bg-white-5 border border-white-10 text-white font-bold text-sm tracking-wide focus:outline-none focus:border-pink-500 transition-colors"
               />
             </div>
+            
+            <div className="flex flex-col gap-1.5">
+              <label className="text-10px font-bold uppercase tracking-wider text-zinc-400">Adresse du serveur de jeu</label>
+              <input
+                type="text"
+                value={serverUrl}
+                onChange={(e) => setServerUrl(e.target.value)}
+                placeholder="Ex: https://rasras-server.onrender.com"
+                className="py-3.5 px-4 rounded-xl bg-white-5 border border-white-10 text-white font-mono text-xs focus:outline-none focus:border-pink-500 transition-colors"
+              />
+              <span className="text-[9px] text-zinc-400 leading-tight">
+                Laissez vide pour l'adresse automatique (https://rasras-server.onrender.com).
+              </span>
+            </div>
+
             {errorMsg && <p className="text-xs font-bold text-red-400 bg-red-500-10 border border-red-500-20 px-3 py-2 rounded-lg text-center">{errorMsg}</p>}
             <button
               type="submit"

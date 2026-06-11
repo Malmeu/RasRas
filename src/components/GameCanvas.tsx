@@ -112,13 +112,23 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const crowdMembers: CrowdMember[] = [];
     const activeBubbles: { container: Container; timer: number; maxTime: number; supporterIndex: number; }[] = [];
 
-    // Dimensions du canvas (dynamiques sur mobile plein écran)
+    // Dimensions du canvas (dynamiques sur mobile plein écran - hauteur réduite de 120px pour la barre de contrôles)
     const width = isMobile ? window.innerWidth : 800;
-    const height = isMobile ? window.innerHeight : 550;
+    const height = isMobile ? (window.innerHeight - 120) : 550;
 
-    // Dimensions physiques constantes du ring pour conserver le gameplay d'origine
-    const ringWidth = 464;
-    const ringHeight = 325;
+    // Dimensions physiques du ring
+    let ringWidth = 464;
+    let ringHeight = 325;
+
+    // Sur mobile, on réduit proportionnellement la taille du ring pour qu'il rentre dans le canvas
+    if (isMobile) {
+      const maxRingHeight = height * 0.72; // Le ring doit prendre au maximum 72% de la hauteur du canvas
+      if (ringHeight > maxRingHeight) {
+        const scale = maxRingHeight / ringHeight;
+        ringHeight = maxRingHeight;
+        ringWidth = ringWidth * scale;
+      }
+    }
 
     // Centre du Ring de combat
     const ringCenter = { x: width / 2, y: height / 2 + 10 };
