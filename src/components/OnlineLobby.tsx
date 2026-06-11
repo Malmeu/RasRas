@@ -7,7 +7,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { Swords, User, Users, Globe, Play } from 'lucide-react';
+import { User, Users, Globe } from 'lucide-react';
 import { soundManager } from '../game/SoundManager';
 import { CHARACTERS, type Character } from './CharacterSelection';
 
@@ -31,7 +31,7 @@ export const OnlineLobby: React.FC<OnlineLobbyProps> = ({ onBack, onGameStart })
     if (window.location.hostname === 'localhost') {
       return 'http://localhost:3001';
     }
-    return '';
+    return 'https://rasras.onrender.com/';
   });
 
   const updateRoomCode = (code: string) => {
@@ -61,7 +61,7 @@ export const OnlineLobby: React.FC<OnlineLobbyProps> = ({ onBack, onGameStart })
     if (!socketUrl) {
       // Détection automatique s'il s'agit d'itch.io ou non
       const isItch = window.location.hostname.includes('itch.io') || window.location.hostname.includes('hwcdn.net');
-      socketUrl = isItch ? 'https://rasras-server.onrender.com' : window.location.origin;
+      socketUrl = isItch ? 'https://rasras.onrender.com/' : window.location.origin;
     }
 
     const newSocket = io(socketUrl, {
@@ -240,11 +240,11 @@ export const OnlineLobby: React.FC<OnlineLobbyProps> = ({ onBack, onGameStart })
                 type="text"
                 value={serverUrl}
                 onChange={(e) => setServerUrl(e.target.value)}
-                placeholder="Ex: https://rasras-server.onrender.com"
+                placeholder="Ex: https://rasras.onrender.com/"
                 className="py-3.5 px-4 rounded-xl bg-white-5 border border-white-10 text-white font-mono text-xs focus:outline-none focus:border-pink-500 transition-colors"
               />
               <span className="text-[9px] text-zinc-400 leading-tight">
-                Laissez vide pour l'adresse automatique (https://rasras-server.onrender.com).
+                Laissez vide pour l'adresse automatique (https://rasras.onrender.com/).
               </span>
             </div>
 
@@ -361,135 +361,176 @@ export const OnlineLobby: React.FC<OnlineLobbyProps> = ({ onBack, onGameStart })
       )}
 
       {/* 4. ÉCRAN SÉLECTION DES PERSONNAGES */}
-      {lobbyState === 'selection' && (
-        <div className="w-full max-w-5xl relative z-10 flex flex-col gap-6 animate-fade-in">
-          {/* Header de salon */}
-          <div className="flex justify-between items-center bg-slate-950-60 border border-white-10 p-4 rounded-2xl backdrop-blur-md">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">Salon privé : <strong className="text-pink-400 font-mono">{currentRoomCode}</strong></span>
-            <div className="flex items-center gap-4 text-xs font-black uppercase tracking-wider">
-              <span className={localReady ? 'text-emerald-400' : 'text-zinc-500'}>{p1Name} {localReady && '✓ READY'}</span>
-              <span className="text-zinc-600">VS</span>
-              <span className={opponentReady ? 'text-emerald-400' : 'text-zinc-500'}>{p2Name} {opponentReady && '✓ READY'}</span>
+      {lobbyState === 'selection' && (() => {
+        const opponentName = playerName === p1Name ? p2Name : p1Name;
+        return (
+          <div className="w-full max-w-5xl relative z-10 flex flex-col gap-5 animate-fade-in px-2">
+            {/* Header de salon */}
+            <div className="flex justify-between items-center bg-slate-950-60 border border-white-10 p-3 rounded-2xl backdrop-blur-md">
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">Salon : <strong className="text-pink-400 font-mono">{currentRoomCode}</strong></span>
+              <div className="flex items-center gap-4 text-xs font-black uppercase tracking-wider">
+                <span className={localReady ? 'text-emerald-400' : 'text-zinc-500'}>{playerName} {localReady && '✓ PRÊT'}</span>
+                <span className="text-zinc-600">VS</span>
+                <span className={opponentReady ? 'text-emerald-400' : 'text-zinc-500'}>{opponentName} {opponentReady && '✓ PRÊT'}</span>
+              </div>
+              <button 
+                onClick={() => { socket?.emit('leave_room'); setLobbyState('menu'); }}
+                className="py-1.5 px-3 rounded-lg border border-white-5 hover:bg-red-500-20 hover:border-red-500-30 text-zinc-400 hover:text-white transition-all text-10px font-bold uppercase tracking-wider"
+              >
+                Quitter
+              </button>
             </div>
-            <button 
-              onClick={() => { socket?.emit('leave_room'); setLobbyState('menu'); }}
-              className="py-1.5 px-3 rounded-lg border border-white-5 hover:bg-red-500-20 hover:border-red-500-30 text-zinc-400 hover:text-white transition-all text-10px font-bold uppercase tracking-wider"
-            >
-              Quitter
-            </button>
-          </div>
 
-          {/* Grille de sélection des personnages */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
-            {CHARACTERS.map((char) => {
-              const isSelectedLocal = localChar?.id === char.id;
-              const isSelectedOpponent = opponentChar?.id === char.id;
-
-              return (
-                <div
-                  key={char.id}
-                  onClick={() => handleSelectCharacter(char)}
-                  onMouseEnter={playHoverSound}
-                  className={`group cursor-pointer rounded-2xl p-4 border backdrop-blur-md transition-all duration-300 transform flex flex-col justify-between relative overflow-hidden ${
-                    isSelectedLocal
-                      ? 'bg-pink-950-20 border-pink-500 scale-[1.02]'
-                      : 'bg-slate-950-50 border-white-10 hover:border-pink-500-50'
-                  }`}
-                  style={isSelectedLocal ? {
-                    boxShadow: '0 0 20px rgba(219,39,119,0.25)'
-                  } : {}}
-                >
-                  <div
-                    className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300 pointer-events-none"
-                    style={{ background: `radial-gradient(circle at center, ${char.colorHex} 0%, transparent 70%)` }}
-                  />
-
-                  {/* Tête de combattant en CSS réduite */}
-                  <div className="flex justify-center items-center py-3">
-                    <div
-                      className="w-16 h-16 rounded-full border-2 border-zinc-950 relative transition-transform duration-300 group-hover:scale-105 flex items-center justify-center"
-                      style={{ backgroundColor: char.colorHex }}
-                    >
-                      <div className="absolute top-[35%] left-[20%] w-3.5 h-3.5 rounded-full bg-white border border-black flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 rounded-full bg-zinc-950 translate-x-1px translate-y-1px" />
+            {/* Layout Principal Style Street Fighter (3 colonnes) */}
+            <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+              
+              {/* COLONNE GAUCHE - PORTRAIT ET STATS JOUEUR LOCAL ("MOI") */}
+              <div className={`flex flex-col items-center gap-2 bg-slate-950-60 border p-3 rounded-2xl backdrop-blur-xl w-full min-h-[190px] justify-between relative overflow-hidden shadow-md transition-all ${localReady ? 'border-emerald-500-40' : 'border-pink-500-30'}`}>
+                <div className="absolute inset-0 bg-pink-500-5 pointer-events-none" />
+                <span className="text-[9px] text-pink-500 font-black uppercase tracking-widest">Moi</span>
+                
+                {localChar ? (
+                  <div className="flex flex-col items-center gap-1.5 w-full animate-scale-up">
+                    {/* Portrait compact */}
+                    <div className="rounded-full border-3 flex items-center justify-center bg-slate-900 shadow-md relative animate-bounce-subtle" style={{ width: '70px', height: '70px', backgroundColor: localChar.colorHex, borderColor: localReady ? '#10b981' : '#ec4899' }}>
+                      {/* Yeux */}
+                      <div className="absolute top-[35%] left-[20%] rounded-full bg-white border border-black flex items-center justify-center" style={{ width: '12px', height: '12px' }}>
+                        <div className="rounded-full bg-zinc-950 translate-x-0.5 translate-y-0.5" style={{ width: '6px', height: '6px' }} />
                       </div>
-                      <div className="absolute top-[35%] right-[20%] w-3.5 h-3.5 rounded-full bg-white border border-black flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 rounded-full bg-zinc-950 translate-x-1px translate-y-1px" />
+                      <div className="absolute top-[35%] right-[20%] rounded-full bg-white border border-black flex items-center justify-center" style={{ width: '12px', height: '12px' }}>
+                        <div className="rounded-full bg-zinc-950 translate-x-0.5 translate-y-0.5" style={{ width: '6px', height: '6px' }} />
                       </div>
-                      <div className="absolute bottom-[-3px] left-[-8px] w-5.5 h-5.5 rounded-full border-2 border-zinc-950" style={{ backgroundColor: char.gloveColorHex }} />
-                      <div className="absolute bottom-[-3px] right-[-8px] w-5.5 h-5.5 rounded-full border-2 border-zinc-950" style={{ backgroundColor: char.gloveColorHex }} />
+                      {/* Gants */}
+                      <div className="absolute bottom-[-3px] left-[-4px] rounded-full border-2 border-zinc-950 shadow-md" style={{ width: '20px', height: '20px', backgroundColor: localChar.gloveColorHex }} />
+                      <div className="absolute bottom-[-3px] right-[-4px] rounded-full border-2 border-zinc-950 shadow-md" style={{ width: '20px', height: '20px', backgroundColor: localChar.gloveColorHex }} />
+                    </div>
+                    
+                    <span className="text-xs font-black uppercase tracking-tight text-white">{localChar.name}</span>
+                    
+                    {/* Stats Ultra Compactes */}
+                    <div className="w-full flex flex-col gap-0.5 text-[8px] font-bold text-zinc-400">
+                      <div className="flex justify-between items-center"><span className="uppercase font-sans">HP</span><span className="text-red-400 font-mono">{localChar.maxHp}</span></div>
+                      <div className="w-full bg-zinc-900 h-0.5 rounded-full overflow-hidden"><div className="bg-red-500 h-full" style={{ width: `${(localChar.maxHp/120)*100}%` }} /></div>
+                      <div className="flex justify-between items-center"><span className="uppercase font-sans">SPD</span><span className="text-cyan-400 font-mono">{localChar.speed.toFixed(1)}</span></div>
+                      <div className="w-full bg-zinc-900 h-0.5 rounded-full overflow-hidden"><div className="bg-cyan-500 h-full" style={{ width: `${(localChar.speed/5.5)*100}%` }} /></div>
+                      <div className="flex justify-between items-center"><span className="uppercase font-sans">PWR</span><span className="text-orange-400 font-mono">{localChar.power}</span></div>
+                      <div className="w-full bg-zinc-900 h-0.5 rounded-full overflow-hidden"><div className="bg-orange-500 h-full" style={{ width: `${(localChar.power/10)*100}%` }} /></div>
                     </div>
                   </div>
+                ) : (
+                  <div className="h-24 flex items-center justify-center text-zinc-600 text-[9px] font-bold uppercase italic text-center px-2">Choisissez votre combattant...</div>
+                )}
+              </div>
 
-                  {/* Contenu textuel et statistiques en ligne */}
-                  <div className="flex flex-col gap-3">
-                    <h3 className="text-sm font-black uppercase text-center text-white tracking-tight">
-                      {char.name}
-                    </h3>
+              {/* COLONNE CENTRALE - GRILLE DE CHOIX HORIZONTALE COMPACTE ET BOUTON PRÊT */}
+              <div className="flex flex-col items-center gap-3 w-full justify-center">
+                {/* Grille Horizontale Compacte */}
+                <div className="flex flex-wrap justify-center gap-2 bg-slate-950-60 border border-white-10 p-3 rounded-2xl backdrop-blur-xl w-full">
+                  {CHARACTERS.map((char) => {
+                    const isSelectedLocal = localChar?.id === char.id;
+                    const isSelectedOpponent = opponentChar?.id === char.id;
+                    const isSelected = isSelectedLocal || isSelectedOpponent;
 
-                    {/* Statistiques en ligne */}
-                    <div className="grid grid-cols-4 gap-1 bg-black-30 p-2 rounded-xl border border-white-5 text-[9px] font-bold text-center text-zinc-300 font-mono">
-                      <div className="flex flex-col items-center justify-center gap-0.5">
-                        <span className="text-red-500 font-mono">{char.maxHp}</span>
-                        <span className="text-[7px] text-zinc-500 uppercase font-sans">HP</span>
+                    return (
+                      <div
+                        key={char.id}
+                        onClick={() => handleSelectCharacter(char)}
+                        onMouseEnter={playHoverSound}
+                        className={`cursor-pointer rounded-xl border flex items-center justify-center transition-all duration-200 transform hover:scale-105 active:scale-95 relative overflow-hidden ${
+                          isSelectedLocal
+                            ? 'border-pink-500 bg-pink-950-20'
+                            : isSelectedOpponent
+                              ? 'border-cyan-500 bg-cyan-950-20'
+                              : 'border-white-10 bg-slate-900 hover:border-pink-500-30'
+                        }`}
+                        style={{
+                          width: '54px',
+                          height: '54px',
+                          boxShadow: isSelected ? (isSelectedLocal ? '0 0 10px rgba(219,39,119,0.3)' : '0 0 10px rgba(6,182,212,0.3)') : 'none'
+                        }}
+                      >
+                        {/* Portrait réduit */}
+                        <div className="rounded-full border border-zinc-950 flex items-center justify-center relative" style={{ width: '36px', height: '36px', backgroundColor: char.colorHex }}>
+                          <div className="absolute top-[35%] left-[20%] rounded-full bg-white border border-black flex items-center justify-center" style={{ width: '6px', height: '6px' }}>
+                            <div className="rounded-full bg-zinc-950 translate-x-px translate-y-px" style={{ width: '3px', height: '3px' }} />
+                          </div>
+                          <div className="absolute top-[35%] right-[20%] rounded-full bg-white border border-black flex items-center justify-center" style={{ width: '6px', height: '6px' }}>
+                            <div className="rounded-full bg-zinc-950 translate-x-px translate-y-px" style={{ width: '3px', height: '3px' }} />
+                          </div>
+                        </div>
+                        {/* Badges en coin */}
+                        {isSelectedLocal && <span className="absolute bottom-0.5 left-0.5 bg-pink-600 text-white text-[7px] font-black px-1 rounded-sm">Moi</span>}
+                        {isSelectedOpponent && <span className="absolute bottom-0.5 right-0.5 bg-cyan-600 text-white text-[7px] font-black px-1 rounded-sm">Adv</span>}
                       </div>
-                      <div className="flex flex-col items-center justify-center gap-0.5 border-l border-white-5">
-                        <span className="text-cyan-400 font-mono">{char.speed.toFixed(1)}</span>
-                        <span className="text-[7px] text-zinc-500 uppercase font-sans">SPD</span>
-                      </div>
-                      <div className="flex flex-col items-center justify-center gap-0.5 border-l border-white-5">
-                        <span className="text-orange-500 font-mono">{char.power}</span>
-                        <span className="text-[7px] text-zinc-500 uppercase font-sans">PWR</span>
-                      </div>
-                      <div className="flex flex-col items-center justify-center gap-0.5 border-l border-white-5">
-                        <span className="text-emerald-400 font-mono">{char.defense}</span>
-                        <span className="text-[7px] text-zinc-500 uppercase font-sans">DEF</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Badges de sélection */}
-                  <div className="absolute top-2.5 right-2.5 flex flex-col gap-1 items-end">
-                    {isSelectedLocal && (
-                      <div className="bg-pink-600 border border-pink-400 text-white font-bold text-[8px] uppercase px-2 py-0.5 rounded-full shadow-md">
-                        Moi {localReady ? '✓ READY' : ''}
-                      </div>
-                    )}
-                    {isSelectedOpponent && (
-                      <div className="bg-cyan-600 border border-cyan-400 text-white font-bold text-[8px] uppercase px-2 py-0.5 rounded-full shadow-md">
-                        Adversaire {opponentReady ? '✓ READY' : ''}
-                      </div>
-                    )}
-                  </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
 
-          {/* Bouton Prêt */}
-          {localChar && (
-            <button
-              onClick={handleToggleReady}
-              className={`w-full py-5 rounded-2xl text-white font-black text-lg uppercase tracking-widest transition-all duration-300 hover-scale-102 active-scale-98 flex items-center justify-center gap-3 border border-white-10 mt-4 ${
-                localReady 
-                  ? 'border-emerald-500 text-emerald-400' 
-                  : 'border-pink-500 text-pink-400'
-              }`}
-              style={{
-                background: localReady 
-                  ? 'rgba(16,185,129,0.15)' 
-                  : 'linear-gradient(to right, var(--pink-600), var(--red-600))',
-                boxShadow: localReady 
-                  ? '0 0 20px rgba(16,185,129,0.2)' 
-                  : '0 10px 30px rgba(239,68,68,0.3)'
-              }}
-            >
-              {localReady ? <Play size={20} className="text-emerald-400" /> : <Swords size={20} />}
-              {localReady ? 'Prêt ! En attente de l\'adversaire...' : 'Marquer comme Prêt'}
-            </button>
-          )}
-        </div>
-      )}
+                {/* Bouton de validation Prêt / Marquer comme Prêt */}
+                <div className="w-full flex justify-center min-h-[38px]">
+                  {localChar ? (
+                    <button
+                      onClick={handleToggleReady}
+                      className={`w-full py-2.5 rounded-xl text-white font-black text-[10px] uppercase tracking-wider transition-all duration-200 hover:scale-103 active:scale-97 border ${
+                        localReady 
+                          ? 'border-emerald-500 text-emerald-400 bg-emerald-500-10' 
+                          : 'border-pink-500 text-pink-400 bg-pink-500-10 hover:bg-pink-500-20'
+                      }`}
+                      style={{
+                        cursor: 'pointer',
+                        boxShadow: localReady ? '0 0 10px rgba(16,185,129,0.2)' : '0 4px 12px rgba(239,68,68,0.2)'
+                      }}
+                    >
+                      {localReady ? '✓ Prêt ! En attente...' : 'Marquer comme Prêt'}
+                    </button>
+                  ) : (
+                    <div className="text-[9px] font-black text-zinc-600 italic tracking-wider uppercase flex items-center justify-center">Sélectionnez un personnage</div>
+                  )}
+                </div>
+              </div>
+
+              {/* COLONNE DROITE - PORTRAIT ET STATS JOUEUR DISTANT ("ADVERSAIRE") */}
+              <div className={`flex flex-col items-center gap-2 bg-slate-950-60 border p-3 rounded-2xl backdrop-blur-xl w-full min-h-[190px] justify-between relative overflow-hidden shadow-md transition-all ${opponentReady ? 'border-emerald-500-40' : 'border-cyan-500-30'}`}>
+                <div className="absolute inset-0 bg-cyan-500-5 pointer-events-none" />
+                <span className="text-[9px] text-cyan-400 font-black uppercase tracking-widest">Adversaire</span>
+                
+                {opponentChar ? (
+                  <div className="flex flex-col items-center gap-1.5 w-full animate-scale-up">
+                    {/* Portrait compact */}
+                    <div className="rounded-full border-3 flex items-center justify-center bg-slate-900 shadow-md relative animate-bounce-subtle" style={{ width: '70px', height: '70px', backgroundColor: opponentChar.colorHex, borderColor: opponentReady ? '#10b981' : '#06b6d4' }}>
+                      {/* Yeux */}
+                      <div className="absolute top-[35%] left-[20%] rounded-full bg-white border border-black flex items-center justify-center" style={{ width: '12px', height: '12px' }}>
+                        <div className="rounded-full bg-zinc-950 translate-x-0.5 translate-y-0.5" style={{ width: '6px', height: '6px' }} />
+                      </div>
+                      <div className="absolute top-[35%] right-[20%] rounded-full bg-white border border-black flex items-center justify-center" style={{ width: '12px', height: '12px' }}>
+                        <div className="rounded-full bg-zinc-950 translate-x-0.5 translate-y-0.5" style={{ width: '6px', height: '6px' }} />
+                      </div>
+                      {/* Gants */}
+                      <div className="absolute bottom-[-3px] left-[-4px] rounded-full border-2 border-zinc-950 shadow-md" style={{ width: '20px', height: '20px', backgroundColor: opponentChar.gloveColorHex }} />
+                      <div className="absolute bottom-[-3px] right-[-4px] rounded-full border-2 border-zinc-950 shadow-md" style={{ width: '20px', height: '20px', backgroundColor: opponentChar.gloveColorHex }} />
+                    </div>
+                    
+                    <span className="text-xs font-black uppercase tracking-tight text-white">{opponentChar.name}</span>
+                    
+                    {/* Stats Ultra Compactes */}
+                    <div className="w-full flex flex-col gap-0.5 text-[8px] font-bold text-zinc-400">
+                      <div className="flex justify-between items-center"><span className="uppercase font-sans">HP</span><span className="text-red-400 font-mono">{opponentChar.maxHp}</span></div>
+                      <div className="w-full bg-zinc-900 h-0.5 rounded-full overflow-hidden"><div className="bg-red-500 h-full" style={{ width: `${(opponentChar.maxHp/120)*100}%` }} /></div>
+                      <div className="flex justify-between items-center"><span className="uppercase font-sans">SPD</span><span className="text-cyan-400 font-mono">{opponentChar.speed.toFixed(1)}</span></div>
+                      <div className="w-full bg-zinc-900 h-0.5 rounded-full overflow-hidden"><div className="bg-cyan-500 h-full" style={{ width: `${(opponentChar.speed/5.5)*100}%` }} /></div>
+                      <div className="flex justify-between items-center"><span className="uppercase font-sans">PWR</span><span className="text-orange-400 font-mono">{opponentChar.power}</span></div>
+                      <div className="w-full bg-zinc-900 h-0.5 rounded-full overflow-hidden"><div className="bg-orange-500 h-full" style={{ width: `${(opponentChar.power/10)*100}%` }} /></div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-24 flex items-center justify-center text-zinc-600 text-[9px] font-bold uppercase italic text-center px-2">En attente de l'adversaire...</div>
+                )}
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };
